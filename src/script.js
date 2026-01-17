@@ -295,7 +295,6 @@ async function showNotification() {
 // Check if it's time to send notification and send if needed
 async function checkAndSendNotification() {
     const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const today = getTodayDate();
     const lastNotificationDate = localStorage.getItem('lastNotificationDate');
     
