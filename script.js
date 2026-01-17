@@ -1,5 +1,7 @@
 // JavaScript for Random Daily Sport Exercise App
 
+// TODO: Randomize the number of repetitions and the type of exercise separately
+
 // Array of sport exercises
 const exercises = [
     "30 jumping jacks",
@@ -24,12 +26,27 @@ const exercises = [
     "20 side lunges (10 each side)"
 ];
 
+// Array of motivational messages
+const motivationalMessages = [
+    "Stay active, stay healthy! Every day is a new opportunity to improve yourself. 💪",
+    "You're stronger than you think! Keep pushing forward! 🌟",
+    "Small steps lead to big changes. Keep going! 🚀",
+    "Your body can do anything, it's your mind you need to convince! 💯",
+    "The only bad workout is the one you didn't do! 🔥",
+    "Believe in yourself and you will be unstoppable! ⭐",
+    "Progress, not perfection. You've got this! 💪",
+    "Every exercise brings you closer to your goals! 🎯",
+    "Sweat now, shine later! Keep moving! ✨",
+    "Don't stop when you're tired, stop when you're done! 🏆"
+];
+
 // Get DOM elements
 const exerciseText = document.getElementById('exercise-text');
 const completeBtn = document.getElementById('complete-btn');
-const skipBtn = document.getElementById('skip-btn');
+const newExerciseBtn = document.getElementById('new-exercise-btn');
 const scoreValue = document.getElementById('score-value');
 const daysCompleted = document.getElementById('days-completed');
+const motivationalMessage = document.getElementById('motivational-message');
 
 // Initialize app state
 let appState = {
@@ -37,7 +54,6 @@ let appState = {
     daysCompleted: 0,
     currentExercise: '',
     lastCompletedDate: null,
-    lastSkippedDate: null,
     consecutiveSkips: 0
 };
 
@@ -56,7 +72,6 @@ function loadState() {
             daysCompleted: 0,
             currentExercise: '',
             lastCompletedDate: null,
-            lastSkippedDate: null,
             consecutiveSkips: 0
         };
     }
@@ -73,30 +88,32 @@ function getTodayDate() {
     return today.toISOString().split('T')[0];
 }
 
-// Generate or retrieve daily exercise
-function getDailyExercise() {
-    const today = getTodayDate();
-    
-    // Check if we need a new exercise for today
-    const savedExerciseDate = localStorage.getItem('exerciseDate');
-    const savedExercise = localStorage.getItem('currentExercise');
-    
-    if (savedExerciseDate === today && savedExercise) {
-        return savedExercise;
-    }
-    
-    // Generate new exercise using date as seed for consistency
-    const dateNumber = new Date(today).getTime();
+// Calculate days between two dates
+function daysBetween(date1, date2) {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    const diffTime = Math.abs(d2 - d1);
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
+// Generate daily exercise based on date
+function generateDailyExercise(date = getTodayDate()) {
+    const dateNumber = new Date(date).getTime();
     const index = dateNumber % exercises.length;
-    const newExercise = exercises[index];
-    
-    // Save the new exercise
-    localStorage.setItem('exerciseDate', today);
-    localStorage.setItem('currentExercise', newExercise);
-    appState.currentExercise = newExercise;
-    saveState();
-    
-    return newExercise;
+    return exercises[index];
+}
+
+// Get daily motivational message based on date
+function getDailyMotivationalMessage(date = getTodayDate()) {
+    const dateNumber = new Date(date).getTime();
+    const index = Math.floor(dateNumber / (1000 * 60 * 60 * 24)) % motivationalMessages.length;
+    return motivationalMessages[index];
+}
+
+// Generate a random exercise (not based on date)
+function generateRandomExercise() {
+    const index = Math.floor(Math.random() * exercises.length);
+    return exercises[index];
 }
 
 // Update the UI with current state
@@ -104,6 +121,34 @@ function updateUI() {
     exerciseText.textContent = appState.currentExercise;
     scoreValue.textContent = appState.score;
     daysCompleted.textContent = appState.daysCompleted;
+    motivationalMessage.textContent = getDailyMotivationalMessage();
+}
+
+// Calculate and apply score changes based on missed days
+function applyMissedDaysPenalty() {
+    const today = getTodayDate();
+    
+    // If user has never completed an exercise, no penalty
+    if (!appState.lastCompletedDate) {
+        return;
+    }
+    
+    // Calculate days since last completion
+    const daysSinceCompletion = daysBetween(appState.lastCompletedDate, today);
+    
+    // If it's been more than 1 day, apply penalties for missed days
+    if (daysSinceCompletion > 1) {
+        const missedDays = daysSinceCompletion - 1;
+        
+        // Apply exponential penalty for each missed day
+        for (let i = 0; i < missedDays; i++) {
+            const penalty = 5 * Math.pow(2, appState.consecutiveSkips);
+            appState.score = Math.max(0, appState.score - penalty);
+            appState.consecutiveSkips += 1;
+        }
+        
+        saveState();
+    }
 }
 
 // Calculate score decrease based on consecutive skips
@@ -135,51 +180,33 @@ function completeExercise() {
     alert('Excellent work! Your score has increased. Keep up the great effort! 💪');
 }
 
-// Handle exercise skip
-function skipExercise() {
-    const today = getTodayDate();
-    
-    // Check if already completed today
-    if (appState.lastCompletedDate === today) {
-        alert('You\'ve already completed today\'s exercise! No need to skip.');
-        return;
-    }
-    
-    // Check if already skipped today
-    if (appState.lastSkippedDate === today) {
-        alert('You\'ve already skipped today\'s exercise.');
-        return;
-    }
-    
-    // Decrease score with acceleration, but don't go below 0
-    const decrease = calculateScoreDecrease();
-    appState.score = Math.max(0, appState.score - decrease);
-    appState.consecutiveSkips += 1;
-    appState.lastSkippedDate = today; // Mark as skipped for today
-    
+// Handle new exercise request
+function getNewExercise() {
+    const newExercise = generateRandomExercise();
+    appState.currentExercise = newExercise;
     saveState();
     updateUI();
-    
-    const message = appState.consecutiveSkips > 1 
-        ? `Exercise skipped. Score decreased by ${decrease} points. Warning: Consecutive skips accelerate score loss!`
-        : `Exercise skipped. Score decreased by ${decrease} points.`;
-    
-    alert(message);
 }
 
 // Initialize the app
 function initApp() {
     loadState();
     
-    // Get today's exercise
-    appState.currentExercise = getDailyExercise();
+    // Apply penalties for missed days
+    applyMissedDaysPenalty();
+    
+    // Get today's exercise (use daily exercise if no current exercise set)
+    if (!appState.currentExercise) {
+        appState.currentExercise = generateDailyExercise();
+        saveState();
+    }
     
     // Update UI
     updateUI();
     
     // Add event listeners
     completeBtn.addEventListener('click', completeExercise);
-    skipBtn.addEventListener('click', skipExercise);
+    newExerciseBtn.addEventListener('click', getNewExercise);
     
     console.log('App initialized successfully');
 }
