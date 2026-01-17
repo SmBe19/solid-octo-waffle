@@ -3,6 +3,17 @@
 const CACHE_NAME = 'daily-exercise-v1';
 const NOTIFICATION_TAG = 'daily-exercise-reminder';
 
+// Send message to all clients about the update
+function notifyClientsAboutUpdate() {
+    self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
+        clients.forEach(client => {
+            client.postMessage({
+                type: 'UPDATE_AVAILABLE'
+            });
+        });
+    });
+}
+
 // Files to cache for offline functionality
 const urlsToCache = [
     '/index.html',
@@ -17,14 +28,17 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
-    console.log('Service worker installed');
+    console.log('Service worker installed - new version available');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('Opened cache');
                 return cache.addAll(urlsToCache);
             })
-            .then(() => self.skipWaiting())
+            .then(() => {
+                // Notify clients about the update (don't skip waiting automatically)
+                notifyClientsAboutUpdate();
+            })
     );
 });
 
@@ -94,7 +108,10 @@ self.addEventListener('fetch', (event) => {
 
 // Listen for messages from the main page
 self.addEventListener('message', (event) => {
-    if (event.data.type === 'SCHEDULE_NOTIFICATION') {
+    if (event.data.type === 'SKIP_WAITING') {
+        // When user accepts update, activate new service worker immediately
+        self.skipWaiting();
+    } else if (event.data.type === 'SCHEDULE_NOTIFICATION') {
         const { enabled } = event.data;
         
         if (!enabled) {

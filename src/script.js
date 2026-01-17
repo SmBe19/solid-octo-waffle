@@ -366,12 +366,42 @@ function decreaseRange() {
 
 // Service Worker registration
 let serviceWorkerRegistration = null;
+let updateAvailable = false;
 
 async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
             serviceWorkerRegistration = await navigator.serviceWorker.register('/service-worker.js');
             console.log('Service Worker registered successfully');
+            
+            // Listen for service worker updates
+            serviceWorkerRegistration.addEventListener('updatefound', () => {
+                const newWorker = serviceWorkerRegistration.installing;
+                console.log('New service worker found, installing...');
+                
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // New service worker installed, show update notification
+                        console.log('New version available');
+                        updateAvailable = true;
+                        showUpdateNotification();
+                    }
+                });
+            });
+            
+            // Check for updates periodically (every 5 minutes)
+            setInterval(() => {
+                serviceWorkerRegistration.update();
+            }, 5 * 60 * 1000); // Check every 5 minutes
+            
+            // Listen for messages from service worker
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data.type === 'UPDATE_AVAILABLE') {
+                    updateAvailable = true;
+                    showUpdateNotification();
+                }
+            });
+            
             return serviceWorkerRegistration;
         } catch (error) {
             console.error('Service Worker registration failed:', error);
@@ -379,6 +409,60 @@ async function registerServiceWorker() {
         }
     }
     return null;
+}
+
+// Show update notification banner
+function showUpdateNotification() {
+    const updateBanner = document.getElementById('update-banner');
+    const updateBtn = document.getElementById('update-btn');
+    const dismissBtn = document.getElementById('dismiss-update-btn');
+    
+    if (updateBanner && (!updateBanner.style.display || updateBanner.style.display === 'none')) {
+        updateBanner.style.display = 'block';
+        document.body.classList.add('update-visible');
+        
+        // Add event listeners if not already added
+        if (updateBtn && !updateBtn.dataset.listenerAdded) {
+            updateBtn.addEventListener('click', applyUpdate);
+            updateBtn.dataset.listenerAdded = 'true';
+        }
+        
+        if (dismissBtn && !dismissBtn.dataset.listenerAdded) {
+            dismissBtn.addEventListener('click', dismissUpdate);
+            dismissBtn.dataset.listenerAdded = 'true';
+        }
+    }
+}
+
+// Apply the update
+function applyUpdate() {
+    if (!serviceWorkerRegistration || !updateAvailable) {
+        console.log('No update available');
+        return;
+    }
+    
+    // Send message to service worker to skip waiting
+    if (serviceWorkerRegistration.waiting) {
+        serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    
+    // Listen for controlling service worker change
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+        }
+    });
+}
+
+// Dismiss update notification
+function dismissUpdate() {
+    const updateBanner = document.getElementById('update-banner');
+    if (updateBanner) {
+        updateBanner.style.display = 'none';
+        document.body.classList.remove('update-visible');
+    }
 }
 
 // Request notification permission
