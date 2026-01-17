@@ -400,26 +400,13 @@ async function requestNotificationPermission() {
     return false;
 }
 
-// Generate notification text for today's exercise
-function getNotificationExerciseText() {
-    const today = getTodayDate();
-    // Use consistent date-based index calculation (without time component)
-    const date = new Date(today + 'T00:00:00');
-    const dateNumber = date.getTime();
-    const index = Math.floor(dateNumber / MS_PER_DAY) % exerciseDefinitions.length;
-    const exercise = generateExercise(index);
-    return formatExercise(exercise);
-}
-
 // Show a notification
 async function showNotification() {
     if (Notification.permission === 'granted') {
-        const exercise = getNotificationExerciseText();
-        
         // Use Service Worker notification if available (works even when page is closed)
         if (serviceWorkerRegistration) {
             await serviceWorkerRegistration.showNotification('Time for your exercise! 💪', {
-                body: `Today's exercise: ${exercise}`,
+                body: 'Time to do your daily exercise!',
                 tag: 'daily-exercise-reminder',
                 requireInteraction: false,
                 vibrate: [200, 100, 200]
@@ -427,7 +414,7 @@ async function showNotification() {
         } else {
             // Fallback to regular notification (only works when page is open)
             new Notification('Time for your exercise! 💪', {
-                body: `Today's exercise: ${exercise}`,
+                body: 'Time to do your daily exercise!',
                 tag: 'daily-exercise-reminder',
                 requireInteraction: false
             });
@@ -476,8 +463,6 @@ async function scheduleDailyNotification() {
             enabled: appState.notificationsEnabled,
             notificationTime: appState.notificationTime
         })));
-        // Store exercise definitions for service worker
-        await cache.put('exerciseDefinitions', new Response(JSON.stringify(exerciseDefinitions)));
     } catch (error) {
         console.log('Could not store notification settings in cache:', error);
     }
@@ -578,14 +563,6 @@ async function initApp() {
     
     // Register service worker for background notifications
     await registerServiceWorker();
-    
-    // Store exercise definitions in cache for service worker access
-    try {
-        const cache = await caches.open('notification-cache');
-        await cache.put('exerciseDefinitions', new Response(JSON.stringify(exerciseDefinitions)));
-    } catch (error) {
-        console.log('Could not store exercise definitions in cache:', error);
-    }
     
     // Get today's exercise (use random exercise if no current exercise set)
     if (!appState.currentExercise) {

@@ -93,44 +93,9 @@ async function checkAndShowNotification(notificationTime) {
     
     // Send notification if current time is at or past the notification time
     if (currentTimeInMinutes >= notifTimeInMinutes && self.registration) {
-        // Get today's exercise from cache
-        let exercise = "your daily exercise";
-        try {
-            const exerciseDefsResponse = await cache.match('exerciseDefinitions');
-            if (exerciseDefsResponse) {
-                const exerciseDefinitions = await exerciseDefsResponse.json();
-                // Use consistent date-based index (without time component)
-                const MS_PER_DAY = 1000 * 60 * 60 * 24;
-                const date = new Date(today + 'T00:00:00');
-                const dateNumber = date.getTime();
-                const index = Math.floor(dateNumber / MS_PER_DAY) % exerciseDefinitions.length;
-                const definition = exerciseDefinitions[index];
-                
-                // Generate random reps within default range
-                const reps = Math.floor(Math.random() * (definition.maxReps - definition.minReps + 1)) + definition.minReps;
-                
-                // Format exercise text (matching main script format)
-                if (definition.unit === "seconds") {
-                    const minutes = Math.floor(reps / 60);
-                    const seconds = reps % 60;
-                    if (minutes > 0 && seconds === 0) {
-                        exercise = `${minutes}-minute ${definition.name}`;
-                    } else if (minutes > 0) {
-                        exercise = `${minutes}:${String(seconds).padStart(2, '0')} ${definition.name}`;
-                    } else {
-                        exercise = `${reps}-second ${definition.name}`;
-                    }
-                } else {
-                    exercise = `${reps} ${definition.name}`;
-                }
-            }
-        } catch (error) {
-            console.error('Could not load exercise definitions from cache:', error);
-        }
-        
         // Show notification
         await self.registration.showNotification('Time for your exercise! 💪', {
-            body: `Today's exercise: ${exercise}`,
+            body: 'Time to do your daily exercise!',
             tag: NOTIFICATION_TAG,
             requireInteraction: false,
             vibrate: [200, 100, 200],
