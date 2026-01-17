@@ -341,3 +341,78 @@ footer {
         flex-direction: column;
     }
 }
+
+/* Update Banner Styles */
+.update-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.update-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.update-message {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.btn-update,
+.btn-dismiss {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn-update {
+    background-color: white;
+    color: #667eea;
+}
+
+.btn-update:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+}
+
+.btn-dismiss {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.btn-dismiss:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Adjust body padding when update banner is shown */
+body.update-visible {
+    padding-top: 80px;
+}

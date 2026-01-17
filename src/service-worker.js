@@ -1,10 +1,117 @@
-// Service Worker for handling notifications even when page is closed
+// Service Worker for handling notifications and offline caching (PWA support)
 
+const CACHE_NAME = 'daily-exercise-v1';
 const NOTIFICATION_TAG = 'daily-exercise-reminder';
+
+// Send message to all clients about the update
+function notifyClientsAboutUpdate() {
+    self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
+        clients.forEach(client => {
+            client.postMessage({
+                type: 'UPDATE_AVAILABLE'
+            });
+        });
+    });
+}
+
+// Files to cache for offline functionality
+const urlsToCache = [
+    '/index.html',
+    '/styles.css',
+    '/script.js',
+    '/manifest.json',
+    '/favicon.ico',
+    '/favicon.svg',
+    '/favicon-192x192.png',
+    '/favicon-512x512.png'
+];
+
+// Install event - cache resources
+self.addEventListener('install', (event) => {
+    console.log('Service worker installed - new version available');
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then((cache) => {
+                console.log('Opened cache');
+                return cache.addAll(urlsToCache);
+            })
+            .then(() => {
+                // Notify clients about the update (don't skip waiting automatically)
+                notifyClientsAboutUpdate();
+            })
+    );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+    console.log('Service worker activated');
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME && cacheName !== 'notification-cache') {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => clients.claim())
+    );
+});
+
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request)
+            .then((response) => {
+                // Cache hit - return response
+                if (response) {
+                    return response;
+                }
+                
+                // Clone the request
+                const fetchRequest = event.request.clone();
+                
+                return fetch(fetchRequest).then((response) => {
+                    // Check if valid response
+                    if (!response || response.status !== 200 || response.type !== 'basic') {
+                        return response;
+                    }
+                    
+                    // Clone the response
+                    const responseToCache = response.clone();
+                    
+                    // Cache the new response
+                    caches.open(CACHE_NAME)
+                        .then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        })
+                        .catch((error) => {
+                            console.error('Failed to cache:', error);
+                        });
+                    
+                    return response;
+                }).catch((error) => {
+                    console.error('Fetch failed:', error);
+                    // Return a basic offline response
+                    return new Response('Offline - content not available', {
+                        status: 503,
+                        statusText: 'Service Unavailable',
+                        headers: new Headers({
+                            'Content-Type': 'text/plain'
+                        })
+                    });
+                });
+            })
+    );
+});
 
 // Listen for messages from the main page
 self.addEventListener('message', (event) => {
-    if (event.data.type === 'SCHEDULE_NOTIFICATION') {
+    if (event.data.type === 'SKIP_WAITING') {
+        // When user accepts update, activate new service worker immediately
+        self.skipWaiting();
+    } else if (event.data.type === 'SCHEDULE_NOTIFICATION') {
         const { enabled } = event.data;
         
         if (!enabled) {
@@ -111,12 +218,4 @@ async function checkAndShowNotification(notificationTime) {
 }
 
 // Keep service worker alive and check periodically
-self.addEventListener('install', (event) => {
-    console.log('Service worker installed');
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-    console.log('Service worker activated');
-    event.waitUntil(clients.claim());
-});
+// Note: install and activate handlers are defined at the top of this file
