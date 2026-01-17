@@ -5,11 +5,9 @@ const NOTIFICATION_TAG = 'daily-exercise-reminder';
 // Listen for messages from the main page
 self.addEventListener('message', (event) => {
     if (event.data.type === 'SCHEDULE_NOTIFICATION') {
-        const { notificationTime, enabled } = event.data;
+        const { enabled } = event.data;
         
-        if (enabled) {
-            scheduleNotification(notificationTime);
-        } else {
+        if (!enabled) {
             // Cancel any scheduled alarms
             if (self.registration && self.registration.showNotification) {
                 self.registration.getNotifications({ tag: NOTIFICATION_TAG }).then(notifications => {
@@ -17,6 +15,10 @@ self.addEventListener('message', (event) => {
                 });
             }
         }
+        // Note: Actual notification scheduling is handled by:
+        // 1. Periodic Background Sync (periodicsync event) when page is closed
+        // 2. setInterval in main page when page is open
+        // Service Workers cannot use setTimeout/setInterval for scheduling
     } else if (event.data.type === 'CHECK_NOTIFICATION') {
         checkAndShowNotification(event.data.notificationTime);
     }
@@ -49,13 +51,6 @@ self.addEventListener('notificationclick', (event) => {
         })
     );
 });
-
-// Schedule periodic check for notification time
-function scheduleNotification(notificationTime) {
-    // Service workers can't use setInterval, so we'll rely on periodic checks
-    // when the page loads and message passing
-    console.log('Service worker: notification scheduled for', notificationTime);
-}
 
 // Check scheduled notifications from periodic sync
 async function checkScheduledNotifications() {

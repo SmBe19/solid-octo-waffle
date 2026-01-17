@@ -277,7 +277,7 @@ async function showNotification() {
         if (serviceWorkerRegistration) {
             await serviceWorkerRegistration.showNotification('Time for your exercise! 💪', {
                 body: `Today's exercise: ${exercise}`,
-                tag: 'daily-exercise',
+                tag: 'daily-exercise-reminder',
                 requireInteraction: false,
                 vibrate: [200, 100, 200]
             });
@@ -285,7 +285,7 @@ async function showNotification() {
             // Fallback to regular notification (only works when page is open)
             new Notification('Time for your exercise! 💪', {
                 body: `Today's exercise: ${exercise}`,
-                tag: 'daily-exercise',
+                tag: 'daily-exercise-reminder',
                 requireInteraction: false
             });
         }
