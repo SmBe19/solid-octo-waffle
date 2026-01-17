@@ -1,10 +1,10 @@
-# TODO: Implementation Tasks for Random Daily Sport Exercise App
+# TODO: Implementation Tasks for Solid Octo Waffle
 
 ## 1. Setup Project Structure
-- [ ] Create the base project structure:
-  - [ ] `index.html` - Main HTML file.
-  - [ ] `styles.css` - Stylesheet for the app.
-  - [ ] `script.js` - JavaScript file for functionality.
+- [x] Create the base project structure:
+  - [x] `index.html` - Main HTML file.
+  - [x] `styles.css` - Stylesheet for the app.
+  - [x] `script.js` - JavaScript file for functionality.
 
 ## 2. HTML: Build the User Interface
 - [ ] Design a simple and clean user interface in `index.html`:
