@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="#FF9500" stroke="#E68300" stroke-width="2"/>
+  
+  <!-- Waffle grid pattern -->
+  <g fill="#FFB347" stroke="#E68300" stroke-width="0.5">
+    <!-- Horizontal lines -->
+    <line x1="18" y1="22" x2="46" y2="22" stroke-width="1"/>
+    <line x1="18" y1="28" x2="46" y2="28" stroke-width="1"/>
+    <line x1="18" y1="34" x2="46" y2="34" stroke-width="1"/>
+    <line x1="18" y1="40" x2="46" y2="40" stroke-width="1"/>
+    <!-- Vertical lines -->
+    <line x1="24" y1="16" x2="24" y2="46" stroke-width="1"/>
+    <line x1="32" y1="16" x2="32" y2="46" stroke-width="1"/>
+    <line x1="40" y1="16" x2="40" y2="46" stroke-width="1"/>
+  </g>
+  
+  <!-- Waffle shape (rounded square) -->
+  <rect x="16" y="16" width="32" height="32" rx="4" ry="4" fill="none" stroke="#8B4513" stroke-width="2"/>
+  
+  <!-- Fitness dumbbell overlay -->
+  <g fill="#4CAF50" stroke="#2E7D32" stroke-width="1.5">
+    <!-- Left weight -->
+    <rect x="20" y="24" width="4" height="16" rx="1"/>
+    <!-- Right weight -->
+    <rect x="40" y="24" width="4" height="16" rx="1"/>
+    <!-- Bar -->
+    <rect x="24" y="30" width="16" height="4" rx="1"/>
+  </g>
+  
+  <!-- Sparkle/energy effect -->
+  <g fill="#FFEB3B" opacity="0.9">
+    <circle cx="50" cy="18" r="2"/>
+    <circle cx="14" cy="50" r="2"/>
+  </g>
+</svg>
