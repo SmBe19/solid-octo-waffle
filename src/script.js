@@ -282,6 +282,7 @@ function getNewExercise() {
 // Increase the repetition range for current exercise
 function increaseRange() {
     if (!appState.currentExercise) return;
+    if (!appState.exerciseRanges) appState.exerciseRanges = {};
     
     const rangeIncrease = 5;
     appState.currentExercise.minReps += rangeIncrease;
@@ -305,6 +306,7 @@ function increaseRange() {
 // Decrease the repetition range for current exercise
 function decreaseRange() {
     if (!appState.currentExercise) return;
+    if (!appState.exerciseRanges) appState.exerciseRanges = {};
     
     const rangeDecrease = 5;
     
