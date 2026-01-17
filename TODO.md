@@ -7,47 +7,47 @@
   - [x] `script.js` - JavaScript file for functionality.
 
 ## 2. HTML: Build the User Interface
-- [ ] Design a simple and clean user interface in `index.html`:
-  - [ ] Header with app title.
-  - [ ] Section to display the daily exercise.
-  - [ ] Buttons for user actions:
-    - [ ] "Complete Exercise" button.
-    - [ ] "Skip Exercise" button.
-  - [ ] Section to display the score with progress tracking.
-  - [ ] Footer with a motivational message.
+- [x] Design a simple and clean user interface in `index.html`:
+  - [x] Header with app title.
+  - [x] Section to display the daily exercise.
+  - [x] Buttons for user actions:
+    - [x] "Complete Exercise" button.
+    - [x] "Skip Exercise" button.
+  - [x] Section to display the score with progress tracking.
+  - [x] Footer with a motivational message.
 
 ## 3. CSS: Style the Application
-- [ ] Create a responsive layout in `styles.css`:
-  - [ ] Use modern design principles for a clean and aesthetic look.
-  - [ ] Add styles for buttons, score indicators, and text.
+- [x] Create a responsive layout in `styles.css`:
+  - [x] Use modern design principles for a clean and aesthetic look.
+  - [x] Add styles for buttons, score indicators, and text.
 
 ## 4. JavaScript: Core Functionality
 ### Daily Exercise Management
-- [ ] Implement logic to generate a random daily sport exercise.
-- [ ] Ensure the random exercise is displayed when the app loads or is refreshed.
+- [x] Implement logic to generate a random daily sport exercise.
+- [x] Ensure the random exercise is displayed when the app loads or is refreshed.
 
 ### Score Tracking
-- [ ] Store the user's score using `localStorage`.
-- [ ] Increase the score when the user completes an exercise.
-- [ ] Implement score reduction logic:
-  - [ ] Decrease the score if the user does not complete an exercise.
-  - [ ] Accelerate the decrease the longer the user skips exercises.
+- [x] Store the user's score using `localStorage`.
+- [x] Increase the score when the user completes an exercise.
+- [x] Implement score reduction logic:
+  - [x] Decrease the score if the user does not complete an exercise.
+  - [x] Accelerate the decrease the longer the user skips exercises.
 
 ### User Interaction
-- [ ] Handle button clicks:
-  - [ ] "Complete Exercise" button to record exercise completion and update the score.
-  - [ ] "Skip Exercise" button to record exercise skipping and adjust the score accordingly.
-- [ ] Show real-time updates to the daily exercise and score on the interface.
+- [x] Handle button clicks:
+  - [x] "Complete Exercise" button to record exercise completion and update the score.
+  - [x] "Skip Exercise" button to record exercise skipping and adjust the score accordingly.
+- [x] Show real-time updates to the daily exercise and score on the interface.
 
 ## 5. Data Persistence
-- [ ] Use `localStorage` to save and retrieve:
-  - [ ] User's score.
-  - [ ] The last completed exercise date.
-  - [ ] The current daily exercise.
+- [x] Use `localStorage` to save and retrieve:
+  - [x] User's score.
+  - [x] The last completed exercise date.
+  - [x] The current daily exercise.
 
 ## 6. Testing and Debugging
-- [ ] Test all features in major browsers to ensure compatibility.
-- [ ] Debug issues with exercise generation, score tracking, and data persistence.
+- [x] Test all features in major browsers to ensure compatibility.
+- [x] Debug issues with exercise generation, score tracking, and data persistence.
 
 ## 7. Deployment
 - [ ] Deploy the app to [https://sow.apps.smeanox.com](https://sow.apps.smeanox.com).
@@ -58,6 +58,7 @@
 - [ ] Implement a customizable difficulty level for exercise generation.
 - [ ] Enable sharing progress on social media platforms.
 - [ ] Add support for multiple languages.
+- [ ] Randomize the number of repetitions and the type of exercise separately.
 
 ---
 
