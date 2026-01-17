@@ -9,6 +9,7 @@ const urlsToCache = [
     '/styles.css',
     '/script.js',
     '/manifest.json',
+    '/favicon.ico',
     '/favicon.svg',
     '/favicon-192x192.png',
     '/favicon-512x512.png'
@@ -66,12 +67,26 @@ self.addEventListener('fetch', (event) => {
                     // Clone the response
                     const responseToCache = response.clone();
                     
+                    // Cache the new response
                     caches.open(CACHE_NAME)
                         .then((cache) => {
                             cache.put(event.request, responseToCache);
+                        })
+                        .catch((error) => {
+                            console.error('Failed to cache:', error);
                         });
                     
                     return response;
+                }).catch((error) => {
+                    console.error('Fetch failed:', error);
+                    // Return a basic offline response
+                    return new Response('Offline - content not available', {
+                        status: 503,
+                        statusText: 'Service Unavailable',
+                        headers: new Headers({
+                            'Content-Type': 'text/plain'
+                        })
+                    });
                 });
             })
     );
