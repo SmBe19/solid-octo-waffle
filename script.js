@@ -38,6 +38,20 @@ const motivationalMessages = [
     "Don't stop when you're tired, stop when you're done! 🏆"
 ];
 
+// Array of success messages for completing an exercise
+const successMessages = [
+    "Excellent work! Your score has increased. Keep up the great effort! 💪",
+    "Amazing! You're crushing it today! 🌟",
+    "Fantastic job! You're on fire! 🔥",
+    "Well done! Your dedication is inspiring! ⭐",
+    "Outstanding! You're getting stronger every day! 💯",
+    "Bravo! Keep that momentum going! 🚀",
+    "Superb! You're a fitness champion! 🏆",
+    "Awesome! Your hard work is paying off! ✨",
+    "Great job! You're unstoppable! 💪",
+    "Wonderful! You're making excellent progress! 🎯"
+];
+
 // Get DOM elements
 const exerciseText = document.getElementById('exercise-text');
 const completeBtn = document.getElementById('complete-btn');
@@ -51,8 +65,7 @@ let appState = {
     score: 0,
     daysCompleted: 0,
     currentExercise: '',
-    lastCompletedDate: null,
-    consecutiveSkips: 0
+    lastCompletedDate: null
 };
 
 // Load state from localStorage
@@ -69,8 +82,7 @@ function loadState() {
             score: 0,
             daysCompleted: 0,
             currentExercise: '',
-            lastCompletedDate: null,
-            consecutiveSkips: 0
+            lastCompletedDate: null
         };
     }
 }
@@ -126,12 +138,13 @@ function updateUI() {
 }
 
 // Calculate penalties for missed days
-function calculatePenalties(baseScore, consecutiveSkips, missedDays) {
+function calculatePenalties(baseScore, missedDays) {
     let score = baseScore;
     
     // Apply linear penalty for each missed day
+    // Penalty increases by 5 for each consecutive day: 5, 10, 15, 20...
     for (let i = 0; i < missedDays; i++) {
-        const penalty = 5 * (1 + consecutiveSkips + i);
+        const penalty = 5 * (1 + i);
         score = Math.max(0, score - penalty);
     }
     
@@ -155,7 +168,7 @@ function calculateCurrentScore() {
     
     // Calculate penalty for missed days
     const missedDays = daysSinceCompletion - 1;
-    return calculatePenalties(appState.score, appState.consecutiveSkips, missedDays);
+    return calculatePenalties(appState.score, missedDays);
 }
 
 // Handle exercise completion
@@ -168,19 +181,14 @@ function completeExercise() {
         return;
     }
     
-    // Calculate days since last completion to update consecutive skips
+    // Calculate days since last completion and apply penalties if needed
     if (appState.lastCompletedDate) {
         const daysSinceCompletion = daysBetween(appState.lastCompletedDate, today);
         
-        // If more than 1 day has passed, update saved score with penalties and consecutive skips
+        // If more than 1 day has passed, update saved score with penalties
         if (daysSinceCompletion > 1) {
             const missedDays = daysSinceCompletion - 1;
-            
-            // Apply penalties to saved score
-            appState.score = calculatePenalties(appState.score, appState.consecutiveSkips, missedDays);
-            
-            // Update consecutive skips
-            appState.consecutiveSkips += missedDays;
+            appState.score = calculatePenalties(appState.score, missedDays);
         }
     }
     
@@ -188,12 +196,13 @@ function completeExercise() {
     appState.score += 10;
     appState.daysCompleted += 1;
     appState.lastCompletedDate = today;
-    appState.consecutiveSkips = 0; // Reset consecutive skips
     
     saveState();
     updateUI();
     
-    alert('Excellent work! Your score has increased. Keep up the great effort! 💪');
+    // Show random success message
+    const randomMessage = successMessages[Math.floor(Math.random() * successMessages.length)];
+    alert(randomMessage);
 }
 
 // Handle new exercise request
