@@ -43,9 +43,22 @@ let appState = {
 
 // Load state from localStorage
 function loadState() {
-    const savedState = localStorage.getItem('exerciseAppState');
-    if (savedState) {
-        appState = JSON.parse(savedState);
+    try {
+        const savedState = localStorage.getItem('exerciseAppState');
+        if (savedState) {
+            appState = JSON.parse(savedState);
+        }
+    } catch (error) {
+        console.error('Error loading state from localStorage:', error);
+        // Reset to default state if corrupted
+        appState = {
+            score: 0,
+            daysCompleted: 0,
+            currentExercise: '',
+            lastCompletedDate: null,
+            lastSkippedDate: null,
+            consecutiveSkips: 0
+        };
     }
 }
 
