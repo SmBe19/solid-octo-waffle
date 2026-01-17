@@ -1,27 +1,27 @@
 // JavaScript for Random Daily Sport Exercise App
 
-// Array of sport exercises
-const exercises = [
-    "30 jumping jacks",
-    "20 push-ups",
-    "15 squats",
-    "1-minute plank",
-    "20 lunges (10 each leg)",
-    "15 burpees",
-    "25 sit-ups",
-    "30-second wall sit",
-    "20 mountain climbers",
-    "10 tricep dips",
-    "15 high knees (each leg)",
-    "20 bicycle crunches",
-    "10 jump squats",
-    "15 leg raises",
-    "30 butt kicks",
-    "12 pike push-ups",
-    "20 Russian twists",
-    "15 box jumps (or step-ups)",
-    "1-minute superman hold",
-    "20 side lunges (10 each side)"
+// Exercise definitions with types and default repetition ranges
+const exerciseDefinitions = [
+    { name: "jumping jacks", unit: "reps", minReps: 20, maxReps: 40 },
+    { name: "push-ups", unit: "reps", minReps: 10, maxReps: 30 },
+    { name: "squats", unit: "reps", minReps: 10, maxReps: 20 },
+    { name: "plank", unit: "seconds", minReps: 30, maxReps: 90 },
+    { name: "lunges (each leg)", unit: "reps", minReps: 8, maxReps: 15 },
+    { name: "burpees", unit: "reps", minReps: 10, maxReps: 20 },
+    { name: "sit-ups", unit: "reps", minReps: 15, maxReps: 35 },
+    { name: "wall sit", unit: "seconds", minReps: 20, maxReps: 45 },
+    { name: "mountain climbers", unit: "reps", minReps: 15, maxReps: 30 },
+    { name: "tricep dips", unit: "reps", minReps: 8, maxReps: 15 },
+    { name: "high knees (each leg)", unit: "reps", minReps: 10, maxReps: 20 },
+    { name: "bicycle crunches", unit: "reps", minReps: 15, maxReps: 30 },
+    { name: "jump squats", unit: "reps", minReps: 8, maxReps: 15 },
+    { name: "leg raises", unit: "reps", minReps: 10, maxReps: 20 },
+    { name: "butt kicks", unit: "reps", minReps: 20, maxReps: 40 },
+    { name: "pike push-ups", unit: "reps", minReps: 8, maxReps: 15 },
+    { name: "Russian twists", unit: "reps", minReps: 15, maxReps: 30 },
+    { name: "box jumps (or step-ups)", unit: "reps", minReps: 10, maxReps: 20 },
+    { name: "superman hold", unit: "seconds", minReps: 30, maxReps: 90 },
+    { name: "side lunges (each side)", unit: "reps", minReps: 8, maxReps: 15 }
 ];
 
 // Array of motivational messages
@@ -59,12 +59,14 @@ const newExerciseBtn = document.getElementById('new-exercise-btn');
 const scoreValue = document.getElementById('score-value');
 const daysCompleted = document.getElementById('days-completed');
 const motivationalMessage = document.getElementById('motivational-message');
+const increaseRangeBtn = document.getElementById('increase-range-btn');
+const decreaseRangeBtn = document.getElementById('decrease-range-btn');
 
 // Initialize app state
 let appState = {
     score: 0,
     daysCompleted: 0,
-    currentExercise: '',
+    currentExercise: null, // Now stores { exerciseIndex, reps, minReps, maxReps }
     lastCompletedDate: null
 };
 
@@ -81,7 +83,7 @@ function loadState() {
         appState = {
             score: 0,
             daysCompleted: 0,
-            currentExercise: '',
+            currentExercise: null,
             lastCompletedDate: null
         };
     }
@@ -112,8 +114,45 @@ function daysBetween(date1, date2) {
 // Generate daily exercise based on date
 function generateDailyExercise(date = getTodayDate()) {
     const dateNumber = new Date(date).getTime();
-    const index = dateNumber % exercises.length;
-    return exercises[index];
+    const index = dateNumber % exerciseDefinitions.length;
+    return generateExercise(index);
+}
+
+// Generate an exercise with random reps from the range
+function generateExercise(exerciseIndex, customMinReps = null, customMaxReps = null) {
+    const definition = exerciseDefinitions[exerciseIndex];
+    const minReps = customMinReps !== null ? customMinReps : definition.minReps;
+    const maxReps = customMaxReps !== null ? customMaxReps : definition.maxReps;
+    const reps = Math.floor(Math.random() * (maxReps - minReps + 1)) + minReps;
+    
+    return {
+        exerciseIndex,
+        reps,
+        minReps,
+        maxReps
+    };
+}
+
+// Format exercise for display
+function formatExercise(exercise) {
+    if (!exercise) return 'Loading exercise...';
+    
+    const definition = exerciseDefinitions[exercise.exerciseIndex];
+    if (definition.unit === "seconds") {
+        if (exercise.reps >= 60) {
+            const minutes = Math.floor(exercise.reps / 60);
+            const seconds = exercise.reps % 60;
+            if (seconds === 0) {
+                return `${minutes}-minute ${definition.name}`;
+            } else {
+                return `${minutes}:${seconds.toString().padStart(2, '0')}-minute ${definition.name}`;
+            }
+        } else {
+            return `${exercise.reps}-second ${definition.name}`;
+        }
+    } else {
+        return `${exercise.reps} ${definition.name}`;
+    }
 }
 
 // Get daily motivational message based on date
@@ -125,16 +164,27 @@ function getDailyMotivationalMessage(date = getTodayDate()) {
 
 // Generate a random exercise (not based on date)
 function generateRandomExercise() {
-    const index = Math.floor(Math.random() * exercises.length);
-    return exercises[index];
+    const index = Math.floor(Math.random() * exerciseDefinitions.length);
+    // If there's a current exercise, use its custom range if it has one
+    if (appState.currentExercise && appState.currentExercise.exerciseIndex === index) {
+        return generateExercise(index, appState.currentExercise.minReps, appState.currentExercise.maxReps);
+    }
+    return generateExercise(index);
 }
 
 // Update the UI with current state
 function updateUI() {
-    exerciseText.textContent = appState.currentExercise;
+    exerciseText.textContent = formatExercise(appState.currentExercise);
     scoreValue.textContent = calculateCurrentScore();
     daysCompleted.textContent = appState.daysCompleted;
     motivationalMessage.textContent = getDailyMotivationalMessage();
+    
+    // Update button states
+    if (appState.currentExercise) {
+        const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+        decreaseRangeBtn.disabled = appState.currentExercise.minReps <= definition.minReps && 
+                                      appState.currentExercise.maxReps <= definition.maxReps;
+    }
 }
 
 // Calculate penalties for missed days
@@ -213,6 +263,49 @@ function getNewExercise() {
     updateUI();
 }
 
+// Increase the repetition range for current exercise
+function increaseRange() {
+    if (!appState.currentExercise) return;
+    
+    const rangeIncrease = 5;
+    appState.currentExercise.minReps += rangeIncrease;
+    appState.currentExercise.maxReps += rangeIncrease;
+    
+    // Regenerate reps within new range
+    const minReps = appState.currentExercise.minReps;
+    const maxReps = appState.currentExercise.maxReps;
+    appState.currentExercise.reps = Math.floor(Math.random() * (maxReps - minReps + 1)) + minReps;
+    
+    saveState();
+    updateUI();
+}
+
+// Decrease the repetition range for current exercise
+function decreaseRange() {
+    if (!appState.currentExercise) return;
+    
+    const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+    const rangeDecrease = 5;
+    
+    // Don't go below the default minimum
+    const newMinReps = Math.max(definition.minReps, appState.currentExercise.minReps - rangeDecrease);
+    const newMaxReps = Math.max(definition.maxReps, appState.currentExercise.maxReps - rangeDecrease);
+    
+    // Only update if we can actually decrease
+    if (newMinReps < appState.currentExercise.minReps || newMaxReps < appState.currentExercise.maxReps) {
+        appState.currentExercise.minReps = newMinReps;
+        appState.currentExercise.maxReps = newMaxReps;
+        
+        // Regenerate reps within new range
+        const minReps = appState.currentExercise.minReps;
+        const maxReps = appState.currentExercise.maxReps;
+        appState.currentExercise.reps = Math.floor(Math.random() * (maxReps - minReps + 1)) + minReps;
+        
+        saveState();
+        updateUI();
+    }
+}
+
 // Initialize the app
 function initApp() {
     loadState();
@@ -229,6 +322,8 @@ function initApp() {
     // Add event listeners
     completeBtn.addEventListener('click', completeExercise);
     newExerciseBtn.addEventListener('click', getNewExercise);
+    increaseRangeBtn.addEventListener('click', increaseRange);
+    decreaseRangeBtn.addEventListener('click', decreaseRange);
     
     console.log('App initialized successfully');
 }
