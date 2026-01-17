@@ -59,13 +59,18 @@ const newExerciseBtn = document.getElementById('new-exercise-btn');
 const scoreValue = document.getElementById('score-value');
 const daysCompleted = document.getElementById('days-completed');
 const motivationalMessage = document.getElementById('motivational-message');
+const notificationsToggle = document.getElementById('notifications-toggle');
+const notificationTime = document.getElementById('notification-time');
+const timePickerContainer = document.getElementById('time-picker-container');
 
 // Initialize app state
 let appState = {
     score: 0,
     daysCompleted: 0,
     currentExercise: '',
-    lastCompletedDate: null
+    lastCompletedDate: null,
+    notificationsEnabled: false,
+    notificationTime: '09:00'
 };
 
 // Load state from localStorage
@@ -74,6 +79,13 @@ function loadState() {
         const savedState = localStorage.getItem('exerciseAppState');
         if (savedState) {
             appState = JSON.parse(savedState);
+            // Ensure new properties have defaults if not present
+            if (appState.notificationsEnabled === undefined) {
+                appState.notificationsEnabled = false;
+            }
+            if (appState.notificationTime === undefined) {
+                appState.notificationTime = '09:00';
+            }
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
@@ -82,7 +94,9 @@ function loadState() {
             score: 0,
             daysCompleted: 0,
             currentExercise: '',
-            lastCompletedDate: null
+            lastCompletedDate: null,
+            notificationsEnabled: false,
+            notificationTime: '09:00'
         };
     }
 }
@@ -135,6 +149,11 @@ function updateUI() {
     scoreValue.textContent = calculateCurrentScore();
     daysCompleted.textContent = appState.daysCompleted;
     motivationalMessage.textContent = getDailyMotivationalMessage();
+    
+    // Update notification settings UI
+    notificationsToggle.checked = appState.notificationsEnabled;
+    notificationTime.value = appState.notificationTime;
+    notificationTime.disabled = !appState.notificationsEnabled;
 }
 
 // Calculate penalties for missed days
@@ -213,6 +232,120 @@ function getNewExercise() {
     updateUI();
 }
 
+// Request notification permission
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('This browser does not support notifications');
+        return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+        return true;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+    }
+    
+    return false;
+}
+
+// Show a notification
+function showNotification() {
+    if (Notification.permission === 'granted') {
+        const exercise = generateDailyExercise();
+        new Notification('Time for your exercise! 💪', {
+            body: `Today's exercise: ${exercise}`,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'daily-exercise',
+            requireInteraction: false
+        });
+    }
+}
+
+// Schedule daily notification
+function scheduleDailyNotification() {
+    // Clear any existing interval
+    if (window.notificationInterval) {
+        clearInterval(window.notificationInterval);
+    }
+    
+    if (!appState.notificationsEnabled) {
+        return;
+    }
+    
+    // Check every minute if it's time to send notification
+    window.notificationInterval = setInterval(() => {
+        const now = new Date();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        // Check if it's the notification time and we haven't sent one today
+        if (currentTime === appState.notificationTime) {
+            const today = getTodayDate();
+            const lastNotificationDate = localStorage.getItem('lastNotificationDate');
+            
+            if (lastNotificationDate !== today) {
+                showNotification();
+                localStorage.setItem('lastNotificationDate', today);
+            }
+        }
+    }, 60000); // Check every minute
+    
+    // Also check immediately in case we're at the right time
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    if (currentTime === appState.notificationTime) {
+        const today = getTodayDate();
+        const lastNotificationDate = localStorage.getItem('lastNotificationDate');
+        
+        if (lastNotificationDate !== today) {
+            showNotification();
+            localStorage.setItem('lastNotificationDate', today);
+        }
+    }
+}
+
+// Handle notification toggle
+async function handleNotificationToggle() {
+    const isEnabled = notificationsToggle.checked;
+    
+    if (isEnabled) {
+        const hasPermission = await requestNotificationPermission();
+        if (hasPermission) {
+            appState.notificationsEnabled = true;
+            notificationTime.disabled = false;
+            scheduleDailyNotification();
+        } else {
+            // Permission denied, revert toggle
+            notificationsToggle.checked = false;
+            appState.notificationsEnabled = false;
+            alert('Please enable notifications in your browser settings to use this feature.');
+        }
+    } else {
+        appState.notificationsEnabled = false;
+        notificationTime.disabled = true;
+        if (window.notificationInterval) {
+            clearInterval(window.notificationInterval);
+        }
+    }
+    
+    saveState();
+    updateUI();
+}
+
+// Handle notification time change
+function handleNotificationTimeChange() {
+    appState.notificationTime = notificationTime.value;
+    saveState();
+    
+    // Reschedule with new time
+    if (appState.notificationsEnabled) {
+        scheduleDailyNotification();
+    }
+}
+
 // Initialize the app
 function initApp() {
     loadState();
@@ -229,6 +362,13 @@ function initApp() {
     // Add event listeners
     completeBtn.addEventListener('click', completeExercise);
     newExerciseBtn.addEventListener('click', getNewExercise);
+    notificationsToggle.addEventListener('change', handleNotificationToggle);
+    notificationTime.addEventListener('change', handleNotificationTimeChange);
+    
+    // Set up notifications if enabled
+    if (appState.notificationsEnabled) {
+        scheduleDailyNotification();
+    }
     
     console.log('App initialized successfully');
 }

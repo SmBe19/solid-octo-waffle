@@ -159,6 +159,63 @@ main {
     font-weight: bold;
 }
 
+/* Settings Section */
+#settings-section {
+    background-color: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+#settings-section h2 {
+    color: #667eea;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+}
+
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.setting-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    color: #333;
+    cursor: pointer;
+}
+
+.toggle-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.time-input {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #667eea;
+    border-radius: 5px;
+    color: #333;
+    cursor: pointer;
+}
+
+.time-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+}
+
 /* Footer */
 footer {
     background-color: rgba(255, 255, 255, 0.95);
