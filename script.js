@@ -125,6 +125,19 @@ function updateUI() {
     motivationalMessage.textContent = getDailyMotivationalMessage();
 }
 
+// Calculate penalties for missed days
+function calculatePenalties(baseScore, consecutiveSkips, missedDays) {
+    let score = baseScore;
+    
+    // Apply linear penalty for each missed day
+    for (let i = 0; i < missedDays; i++) {
+        const penalty = 5 * (1 + consecutiveSkips + i);
+        score = Math.max(0, score - penalty);
+    }
+    
+    return score;
+}
+
 // Calculate current score based on last completion date
 function calculateCurrentScore() {
     // If user has never completed an exercise, return 0
@@ -142,15 +155,7 @@ function calculateCurrentScore() {
     
     // Calculate penalty for missed days
     const missedDays = daysSinceCompletion - 1;
-    let currentScore = appState.score;
-    
-    // Apply linear penalty for each missed day
-    for (let i = 0; i < missedDays; i++) {
-        const penalty = 5 * (1 + appState.consecutiveSkips + i);
-        currentScore = Math.max(0, currentScore - penalty);
-    }
-    
-    return currentScore;
+    return calculatePenalties(appState.score, appState.consecutiveSkips, missedDays);
 }
 
 // Handle exercise completion
@@ -172,10 +177,7 @@ function completeExercise() {
             const missedDays = daysSinceCompletion - 1;
             
             // Apply penalties to saved score
-            for (let i = 0; i < missedDays; i++) {
-                const penalty = 5 * (1 + appState.consecutiveSkips + i);
-                appState.score = Math.max(0, appState.score - penalty);
-            }
+            appState.score = calculatePenalties(appState.score, appState.consecutiveSkips, missedDays);
             
             // Update consecutive skips
             appState.consecutiveSkips += missedDays;
