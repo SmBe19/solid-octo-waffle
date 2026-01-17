@@ -52,7 +52,6 @@ let appState = {
     daysCompleted: 0,
     currentExercise: '',
     lastCompletedDate: null,
-    lastPenaltyDate: null, // Track when penalty was last applied
     consecutiveSkips: 0
 };
 
@@ -71,7 +70,6 @@ function loadState() {
             daysCompleted: 0,
             currentExercise: '',
             lastCompletedDate: null,
-            lastPenaltyDate: null,
             consecutiveSkips: 0
         };
     }
@@ -122,47 +120,37 @@ function generateRandomExercise() {
 // Update the UI with current state
 function updateUI() {
     exerciseText.textContent = appState.currentExercise;
-    scoreValue.textContent = appState.score;
+    scoreValue.textContent = calculateCurrentScore();
     daysCompleted.textContent = appState.daysCompleted;
     motivationalMessage.textContent = getDailyMotivationalMessage();
 }
 
-// Calculate and apply score changes based on missed days
-function applyMissedDaysPenalty() {
-    const today = getTodayDate();
-    
-    // If user has never completed an exercise, no penalty
+// Calculate current score based on last completion date
+function calculateCurrentScore() {
+    // If user has never completed an exercise, return 0
     if (!appState.lastCompletedDate) {
-        return;
+        return 0;
     }
     
-    // Prevent applying penalty multiple times on the same day (double-penalty prevention)
-    if (appState.lastPenaltyDate === today) {
-        return;
-    }
-    
-    // Calculate days since last completion
+    const today = getTodayDate();
     const daysSinceCompletion = daysBetween(appState.lastCompletedDate, today);
     
-    // Don't apply penalty for the current day (only for past missed days)
-    if (daysSinceCompletion > 1) {
-        const missedDays = daysSinceCompletion - 1;
-        
-        // Apply linear penalty for each missed day
-        // Base penalty is 5 points per day, increases by 5 for each consecutive missed day
-        for (let i = 0; i < missedDays; i++) {
-            const penalty = 5 * (1 + appState.consecutiveSkips + i);
-            appState.score = Math.max(0, appState.score - penalty);
-        }
-        
-        // Update consecutive skips count
-        appState.consecutiveSkips += missedDays;
-        
-        // Mark that we applied penalty today
-        appState.lastPenaltyDate = today;
-        
-        saveState();
+    // If completed today or yesterday, no penalty
+    if (daysSinceCompletion <= 1) {
+        return appState.score;
     }
+    
+    // Calculate penalty for missed days
+    const missedDays = daysSinceCompletion - 1;
+    let currentScore = appState.score;
+    
+    // Apply linear penalty for each missed day
+    for (let i = 0; i < missedDays; i++) {
+        const penalty = 5 * (1 + appState.consecutiveSkips + i);
+        currentScore = Math.max(0, currentScore - penalty);
+    }
+    
+    return currentScore;
 }
 
 // Handle exercise completion
@@ -173,6 +161,25 @@ function completeExercise() {
     if (appState.lastCompletedDate === today) {
         alert('Great job! You\'ve already completed today\'s exercise!');
         return;
+    }
+    
+    // Calculate days since last completion to update consecutive skips
+    if (appState.lastCompletedDate) {
+        const daysSinceCompletion = daysBetween(appState.lastCompletedDate, today);
+        
+        // If more than 1 day has passed, update saved score with penalties and consecutive skips
+        if (daysSinceCompletion > 1) {
+            const missedDays = daysSinceCompletion - 1;
+            
+            // Apply penalties to saved score
+            for (let i = 0; i < missedDays; i++) {
+                const penalty = 5 * (1 + appState.consecutiveSkips + i);
+                appState.score = Math.max(0, appState.score - penalty);
+            }
+            
+            // Update consecutive skips
+            appState.consecutiveSkips += missedDays;
+        }
     }
     
     // Increase score and days completed
@@ -198,9 +205,6 @@ function getNewExercise() {
 // Initialize the app
 function initApp() {
     loadState();
-    
-    // Apply penalties for missed days
-    applyMissedDaysPenalty();
     
     // Get today's exercise (use daily exercise if no current exercise set)
     if (!appState.currentExercise) {
