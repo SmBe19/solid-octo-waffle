@@ -1,6 +1,81 @@
-// Service Worker for handling notifications even when page is closed
+// Service Worker for handling notifications and offline caching (PWA support)
 
+const CACHE_NAME = 'daily-exercise-v1';
 const NOTIFICATION_TAG = 'daily-exercise-reminder';
+
+// Files to cache for offline functionality
+const urlsToCache = [
+    '/index.html',
+    '/styles.css',
+    '/script.js',
+    '/manifest.json',
+    '/favicon.svg',
+    '/favicon-192x192.png',
+    '/favicon-512x512.png'
+];
+
+// Install event - cache resources
+self.addEventListener('install', (event) => {
+    console.log('Service worker installed');
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then((cache) => {
+                console.log('Opened cache');
+                return cache.addAll(urlsToCache);
+            })
+            .then(() => self.skipWaiting())
+    );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+    console.log('Service worker activated');
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME && cacheName !== 'notification-cache') {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => clients.claim())
+    );
+});
+
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request)
+            .then((response) => {
+                // Cache hit - return response
+                if (response) {
+                    return response;
+                }
+                
+                // Clone the request
+                const fetchRequest = event.request.clone();
+                
+                return fetch(fetchRequest).then((response) => {
+                    // Check if valid response
+                    if (!response || response.status !== 200 || response.type !== 'basic') {
+                        return response;
+                    }
+                    
+                    // Clone the response
+                    const responseToCache = response.clone();
+                    
+                    caches.open(CACHE_NAME)
+                        .then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    
+                    return response;
+                });
+            })
+    );
+});
 
 // Listen for messages from the main page
 self.addEventListener('message', (event) => {
@@ -111,12 +186,4 @@ async function checkAndShowNotification(notificationTime) {
 }
 
 // Keep service worker alive and check periodically
-self.addEventListener('install', (event) => {
-    console.log('Service worker installed');
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-    console.log('Service worker activated');
-    event.waitUntil(clients.claim());
-});
+// Note: install and activate handlers are defined at the top of this file
