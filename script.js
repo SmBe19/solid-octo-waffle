@@ -88,12 +88,15 @@ function getTodayDate() {
     return today.toISOString().split('T')[0];
 }
 
+// Constants
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 // Calculate days between two dates
 function daysBetween(date1, date2) {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
     const diffTime = Math.abs(d2 - d1);
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.floor(diffTime / MS_PER_DAY);
 }
 
 // Generate daily exercise based on date
@@ -106,7 +109,7 @@ function generateDailyExercise(date = getTodayDate()) {
 // Get daily motivational message based on date
 function getDailyMotivationalMessage(date = getTodayDate()) {
     const dateNumber = new Date(date).getTime();
-    const index = Math.floor(dateNumber / (1000 * 60 * 60 * 24)) % motivationalMessages.length;
+    const index = Math.floor(dateNumber / MS_PER_DAY) % motivationalMessages.length;
     return motivationalMessages[index];
 }
 
