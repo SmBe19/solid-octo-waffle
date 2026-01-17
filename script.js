@@ -141,21 +141,17 @@ function applyMissedDaysPenalty() {
         const missedDays = daysSinceCompletion - 1;
         
         // Apply exponential penalty for each missed day
+        // The penalty increases for each consecutive day: 5, 10, 20, 40...
         for (let i = 0; i < missedDays; i++) {
-            const penalty = 5 * Math.pow(2, appState.consecutiveSkips);
+            const penalty = 5 * Math.pow(2, appState.consecutiveSkips + i);
             appState.score = Math.max(0, appState.score - penalty);
-            appState.consecutiveSkips += 1;
         }
+        
+        // Update consecutive skips count
+        appState.consecutiveSkips += missedDays;
         
         saveState();
     }
-}
-
-// Calculate score decrease based on consecutive skips
-function calculateScoreDecrease() {
-    // Base decrease is 5 points
-    // Accelerates: 5, 10, 20, 40, 80...
-    return 5 * Math.pow(2, appState.consecutiveSkips);
 }
 
 // Handle exercise completion
