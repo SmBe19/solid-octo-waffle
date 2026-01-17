@@ -238,7 +238,7 @@ let serviceWorkerRegistration = null;
 async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
-            serviceWorkerRegistration = await navigator.serviceWorker.register('./service-worker.js');
+            serviceWorkerRegistration = await navigator.serviceWorker.register('/service-worker.js');
             console.log('Service Worker registered successfully');
             return serviceWorkerRegistration;
         } catch (error) {
@@ -414,6 +414,14 @@ async function initApp() {
     
     // Register service worker for background notifications
     await registerServiceWorker();
+    
+    // Store exercises in cache for service worker access
+    try {
+        const cache = await caches.open('notification-cache');
+        await cache.put('exercises', new Response(JSON.stringify(exercises)));
+    } catch (error) {
+        console.log('Could not store exercises in cache:', error);
+    }
     
     // Get today's exercise (use daily exercise if no current exercise set)
     if (!appState.currentExercise) {

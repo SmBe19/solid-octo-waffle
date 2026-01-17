@@ -44,7 +44,7 @@ self.addEventListener('notificationclick', (event) => {
             }
             // Otherwise, open a new window
             if (clients.openWindow) {
-                return clients.openWindow('./index.html');
+                return clients.openWindow(self.location.origin + '/index.html');
             }
         })
     );
@@ -96,33 +96,19 @@ async function checkAndShowNotification(notificationTime) {
         }
         
         if (shouldSend && self.registration) {
-            // Get today's exercise (simplified version)
-            const exercises = [
-                "30 jumping jacks",
-                "20 push-ups",
-                "15 squats",
-                "1-minute plank",
-                "20 lunges (10 each leg)",
-                "15 burpees",
-                "25 sit-ups",
-                "30-second wall sit",
-                "20 mountain climbers",
-                "10 tricep dips",
-                "15 high knees (each leg)",
-                "20 bicycle crunches",
-                "10 jump squats",
-                "15 leg raises",
-                "30 butt kicks",
-                "12 pike push-ups",
-                "20 Russian twists",
-                "15 box jumps (or step-ups)",
-                "1-minute superman hold",
-                "20 side lunges (10 each side)"
-            ];
-            
-            const dateNumber = now.getTime();
-            const index = dateNumber % exercises.length;
-            const exercise = exercises[index];
+            // Get today's exercise from cache
+            let exercise = "your daily exercise";
+            try {
+                const exercisesResponse = await cache.match('exercises');
+                if (exercisesResponse) {
+                    const exercises = await exercisesResponse.json();
+                    const dateNumber = now.getTime();
+                    const index = dateNumber % exercises.length;
+                    exercise = exercises[index];
+                }
+            } catch (error) {
+                console.error('Could not load exercises from cache:', error);
+            }
             
             // Show notification
             await self.registration.showNotification('Time for your exercise! 💪', {
