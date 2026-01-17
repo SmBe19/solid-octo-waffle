@@ -8,5 +8,41 @@
     <script src="script.js" defer></script>
 </head>
 <body>
+    <header>
+        <h1>Solid Octo Waffle</h1>
+        <p class="subtitle">Your Daily Sport Exercise Companion</p>
+    </header>
+
+    <main>
+        <section id="exercise-section">
+            <h2>Today's Exercise</h2>
+            <div id="exercise-display" class="exercise-card">
+                <p id="exercise-text">Loading exercise...</p>
+            </div>
+        </section>
+
+        <section id="actions-section">
+            <button id="complete-btn" class="btn btn-complete">✓ Complete Exercise</button>
+            <button id="skip-btn" class="btn btn-skip">Skip Exercise</button>
+        </section>
+
+        <section id="score-section">
+            <h2>Your Progress</h2>
+            <div class="score-display">
+                <div class="score-item">
+                    <span class="score-label">Current Score</span>
+                    <span id="score-value" class="score-value">0</span>
+                </div>
+                <div class="score-item">
+                    <span class="score-label">Days Completed</span>
+                    <span id="days-completed" class="score-value">0</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p class="motivational-message">Stay active, stay healthy! Every day is a new opportunity to improve yourself. 💪</p>
+    </footer>
 </body>
 </html>
