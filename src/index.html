@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solid Octo Waffle</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="favicon-512x512.png">
+    
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
@@ -18,6 +29,13 @@
             <h2>Today's Exercise</h2>
             <div id="exercise-display" class="exercise-card">
                 <p id="exercise-text">Loading exercise...</p>
+            </div>
+            <div id="range-info" class="range-info">
+                <span id="range-text" class="range-text">Range: Loading...</span>
+                <div class="range-controls">
+                    <button id="decrease-range-btn" class="btn-range-small" title="Decrease range">➖</button>
+                    <button id="increase-range-btn" class="btn-range-small" title="Increase range">➕</button>
+                </div>
             </div>
         </section>
 
@@ -41,8 +59,11 @@
         </section>
 
         <section id="settings-section">
-            <h2>Settings</h2>
-            <div class="settings-content">
+            <h2>
+                <span>Settings</span>
+                <button id="settings-toggle" class="toggle-btn" title="Toggle settings">▶</button>
+            </h2>
+            <div id="settings-content" class="settings-content">
                 <div class="setting-item">
                     <label class="setting-label">
                         <input type="checkbox" id="notifications-toggle" class="toggle-checkbox">
@@ -51,7 +72,7 @@
                 </div>
                 <div class="setting-item" id="time-picker-container">
                     <label for="notification-time" class="setting-label">Reminder Time:</label>
-                    <input type="time" id="notification-time" class="time-input" value="09:00">
+                    <input type="time" id="notification-time" class="time-input" value="20:00">
                 </div>
                 <div class="setting-info">
                     <p>💡 Tip: Keep this page open in a browser tab for reliable notifications. Some browsers may require the page to be open to deliver notifications on time.</p>

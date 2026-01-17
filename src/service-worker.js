@@ -96,15 +96,31 @@ async function checkAndShowNotification(notificationTime) {
         // Get today's exercise from cache
         let exercise = "your daily exercise";
         try {
-            const exercisesResponse = await cache.match('exercises');
-            if (exercisesResponse) {
-                const exercises = await exercisesResponse.json();
+            const exerciseDefsResponse = await cache.match('exerciseDefinitions');
+            if (exerciseDefsResponse) {
+                const exerciseDefinitions = await exerciseDefsResponse.json();
                 const dateNumber = now.getTime();
-                const index = dateNumber % exercises.length;
-                exercise = exercises[index];
+                const index = dateNumber % exerciseDefinitions.length;
+                const definition = exerciseDefinitions[index];
+                
+                // Generate random reps within default range
+                const reps = Math.floor(Math.random() * (definition.maxReps - definition.minReps + 1)) + definition.minReps;
+                
+                // Format exercise text
+                if (definition.unit === "seconds") {
+                    const minutes = Math.floor(reps / 60);
+                    const seconds = reps % 60;
+                    if (minutes > 0) {
+                        exercise = `${minutes}:${String(seconds).padStart(2, '0')} ${definition.name}`;
+                    } else {
+                        exercise = `${reps}-second ${definition.name}`;
+                    }
+                } else {
+                    exercise = `${reps} ${definition.name}`;
+                }
             }
         } catch (error) {
-            console.error('Could not load exercises from cache:', error);
+            console.error('Could not load exercise definitions from cache:', error);
         }
         
         // Show notification
