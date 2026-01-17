@@ -1,8 +1,8 @@
-# Random Daily Sport Exercise App
+# Solid Octo Waffle
 
 ## Description
 
-The Random Daily Sport Exercise App is a simple web application designed to encourage you to stay active by generating a random daily sport exercise. It keeps track of your progress through a local score system, motivating you to complete your exercises every day.
+The Solid Octo Waffle is a simple web application designed to encourage you to stay active by generating a random daily sport exercise. It keeps track of your progress through a local score system, motivating you to complete your exercises every day.
 
 ### Key Features:
 
@@ -78,4 +78,4 @@ Contributions are welcome! Follow these steps to get started:
 
 ---
 
-Stay active and healthy with the Random Daily Sport Exercise App!
+Stay active and healthy with the Solid Octo Waffle!
