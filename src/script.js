@@ -78,6 +78,10 @@ function loadState() {
         const savedState = localStorage.getItem('exerciseAppState');
         if (savedState) {
             appState = JSON.parse(savedState);
+            // Ensure exerciseRanges exists
+            if (!appState.exerciseRanges) {
+                appState.exerciseRanges = {};
+            }
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
