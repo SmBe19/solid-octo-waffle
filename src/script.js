@@ -61,13 +61,15 @@ const daysCompleted = document.getElementById('days-completed');
 const motivationalMessage = document.getElementById('motivational-message');
 const increaseRangeBtn = document.getElementById('increase-range-btn');
 const decreaseRangeBtn = document.getElementById('decrease-range-btn');
+const rangeText = document.getElementById('range-text');
 
 // Initialize app state
 let appState = {
     score: 0,
     daysCompleted: 0,
     currentExercise: null, // Now stores { exerciseIndex, reps, minReps, maxReps }
-    lastCompletedDate: null
+    lastCompletedDate: null,
+    exerciseRanges: {} // Stores custom ranges per exercise: { exerciseIndex: { minReps, maxReps } }
 };
 
 // Load state from localStorage
@@ -84,7 +86,8 @@ function loadState() {
             score: 0,
             daysCompleted: 0,
             currentExercise: null,
-            lastCompletedDate: null
+            lastCompletedDate: null,
+            exerciseRanges: {}
         };
     }
 }
@@ -111,18 +114,23 @@ function daysBetween(date1, date2) {
     return Math.floor(diffTime / MS_PER_DAY);
 }
 
-// Generate daily exercise based on date
-function generateDailyExercise(date = getTodayDate()) {
-    const dateNumber = new Date(date).getTime();
-    const index = dateNumber % exerciseDefinitions.length;
-    return generateExercise(index);
-}
-
 // Generate an exercise with random reps from the range
 function generateExercise(exerciseIndex, customMinReps = null, customMaxReps = null) {
     const definition = exerciseDefinitions[exerciseIndex];
-    const minReps = customMinReps !== null ? customMinReps : definition.minReps;
-    const maxReps = customMaxReps !== null ? customMaxReps : definition.maxReps;
+    
+    // Use custom ranges if provided, otherwise check stored ranges, then use defaults
+    let minReps, maxReps;
+    if (customMinReps !== null && customMaxReps !== null) {
+        minReps = customMinReps;
+        maxReps = customMaxReps;
+    } else if (appState.exerciseRanges[exerciseIndex]) {
+        minReps = appState.exerciseRanges[exerciseIndex].minReps;
+        maxReps = appState.exerciseRanges[exerciseIndex].maxReps;
+    } else {
+        minReps = definition.minReps;
+        maxReps = definition.maxReps;
+    }
+    
     const reps = Math.floor(Math.random() * (maxReps - minReps + 1)) + minReps;
     
     return {
@@ -165,10 +173,6 @@ function getDailyMotivationalMessage(date = getTodayDate()) {
 // Generate a random exercise (not based on date)
 function generateRandomExercise() {
     const index = Math.floor(Math.random() * exerciseDefinitions.length);
-    // If there's a current exercise, use its custom range if it has one
-    if (appState.currentExercise && appState.currentExercise.exerciseIndex === index) {
-        return generateExercise(index, appState.currentExercise.minReps, appState.currentExercise.maxReps);
-    }
     return generateExercise(index);
 }
 
@@ -179,9 +183,19 @@ function updateUI() {
     daysCompleted.textContent = appState.daysCompleted;
     motivationalMessage.textContent = getDailyMotivationalMessage();
     
-    // Update button states
+    // Update range display and button states
     if (appState.currentExercise) {
         const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+        const minReps = appState.currentExercise.minReps;
+        const maxReps = appState.currentExercise.maxReps;
+        
+        // Format range display based on unit type
+        if (definition.unit === "seconds") {
+            rangeText.textContent = `Range: ${minReps}-${maxReps} seconds`;
+        } else {
+            rangeText.textContent = `Range: ${minReps}-${maxReps} reps`;
+        }
+        
         decreaseRangeBtn.disabled = appState.currentExercise.minReps <= definition.minReps && 
                                       appState.currentExercise.maxReps <= definition.maxReps;
     }
@@ -271,6 +285,12 @@ function increaseRange() {
     appState.currentExercise.minReps += rangeIncrease;
     appState.currentExercise.maxReps += rangeIncrease;
     
+    // Store the custom range for this exercise
+    appState.exerciseRanges[appState.currentExercise.exerciseIndex] = {
+        minReps: appState.currentExercise.minReps,
+        maxReps: appState.currentExercise.maxReps
+    };
+    
     // Regenerate reps within new range
     const minReps = appState.currentExercise.minReps;
     const maxReps = appState.currentExercise.maxReps;
@@ -296,6 +316,17 @@ function decreaseRange() {
         appState.currentExercise.minReps = newMinReps;
         appState.currentExercise.maxReps = newMaxReps;
         
+        // Store or remove the custom range for this exercise
+        if (newMinReps === definition.minReps && newMaxReps === definition.maxReps) {
+            // Back to defaults, remove custom range
+            delete appState.exerciseRanges[appState.currentExercise.exerciseIndex];
+        } else {
+            appState.exerciseRanges[appState.currentExercise.exerciseIndex] = {
+                minReps: newMinReps,
+                maxReps: newMaxReps
+            };
+        }
+        
         // Regenerate reps within new range
         const minReps = appState.currentExercise.minReps;
         const maxReps = appState.currentExercise.maxReps;
@@ -310,9 +341,9 @@ function decreaseRange() {
 function initApp() {
     loadState();
     
-    // Get today's exercise (use daily exercise if no current exercise set)
+    // Get today's exercise (use random exercise if no current exercise set)
     if (!appState.currentExercise) {
-        appState.currentExercise = generateDailyExercise();
+        appState.currentExercise = generateRandomExercise();
         saveState();
     }
     
