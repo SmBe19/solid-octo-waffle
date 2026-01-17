@@ -304,7 +304,7 @@ function decreaseRange() {
     
     const rangeDecrease = 5;
     
-    // Ensure reps stay above 0
+    // Ensure reps stay at or above 1
     const newMinReps = Math.max(1, appState.currentExercise.minReps - rangeDecrease);
     const newMaxReps = Math.max(1, appState.currentExercise.maxReps - rangeDecrease);
     
