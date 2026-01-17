@@ -257,11 +257,26 @@ function showNotification() {
         const exercise = generateDailyExercise();
         new Notification('Time for your exercise! 💪', {
             body: `Today's exercise: ${exercise}`,
-            icon: '/favicon.ico',
-            badge: '/favicon.ico',
             tag: 'daily-exercise',
             requireInteraction: false
         });
+    }
+}
+
+// Check if it's time to send notification and send if needed
+function checkAndSendNotification() {
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    // Check if it's the notification time and we haven't sent one today
+    if (currentTime === appState.notificationTime) {
+        const today = getTodayDate();
+        const lastNotificationDate = localStorage.getItem('lastNotificationDate');
+        
+        if (lastNotificationDate !== today) {
+            showNotification();
+            localStorage.setItem('lastNotificationDate', today);
+        }
     }
 }
 
@@ -277,34 +292,10 @@ function scheduleDailyNotification() {
     }
     
     // Check every minute if it's time to send notification
-    window.notificationInterval = setInterval(() => {
-        const now = new Date();
-        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        
-        // Check if it's the notification time and we haven't sent one today
-        if (currentTime === appState.notificationTime) {
-            const today = getTodayDate();
-            const lastNotificationDate = localStorage.getItem('lastNotificationDate');
-            
-            if (lastNotificationDate !== today) {
-                showNotification();
-                localStorage.setItem('lastNotificationDate', today);
-            }
-        }
-    }, 60000); // Check every minute
+    window.notificationInterval = setInterval(checkAndSendNotification, 60000);
     
     // Also check immediately in case we're at the right time
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    if (currentTime === appState.notificationTime) {
-        const today = getTodayDate();
-        const lastNotificationDate = localStorage.getItem('lastNotificationDate');
-        
-        if (lastNotificationDate !== today) {
-            showNotification();
-            localStorage.setItem('lastNotificationDate', today);
-        }
-    }
+    checkAndSendNotification();
 }
 
 // Handle notification toggle
@@ -321,7 +312,7 @@ async function handleNotificationToggle() {
             // Permission denied, revert toggle
             notificationsToggle.checked = false;
             appState.notificationsEnabled = false;
-            alert('Please enable notifications in your browser settings to use this feature.');
+            alert('Notification permission was denied. Please allow notifications when prompted or reset permission in your browser.');
         }
     } else {
         appState.notificationsEnabled = false;
