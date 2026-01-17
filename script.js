@@ -37,6 +37,7 @@ let appState = {
     daysCompleted: 0,
     currentExercise: '',
     lastCompletedDate: null,
+    lastSkippedDate: null,
     consecutiveSkips: 0
 };
 
@@ -88,7 +89,7 @@ function getDailyExercise() {
 // Update the UI with current state
 function updateUI() {
     exerciseText.textContent = appState.currentExercise;
-    scoreValue.textContent = Math.max(0, appState.score);
+    scoreValue.textContent = appState.score;
     daysCompleted.textContent = appState.daysCompleted;
 }
 
@@ -131,11 +132,17 @@ function skipExercise() {
         return;
     }
     
-    // Decrease score with acceleration
+    // Check if already skipped today
+    if (appState.lastSkippedDate === today) {
+        alert('You\'ve already skipped today\'s exercise.');
+        return;
+    }
+    
+    // Decrease score with acceleration, but don't go below 0
     const decrease = calculateScoreDecrease();
-    appState.score -= decrease;
+    appState.score = Math.max(0, appState.score - decrease);
     appState.consecutiveSkips += 1;
-    appState.lastCompletedDate = today; // Mark as "handled" for today
+    appState.lastSkippedDate = today; // Mark as skipped for today
     
     saveState();
     updateUI();
