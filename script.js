@@ -136,7 +136,7 @@ function applyMissedDaysPenalty() {
         return;
     }
     
-    // Don't apply penalty if we already did it today
+    // Prevent applying penalty multiple times on the same day (double-penalty prevention)
     if (appState.lastPenaltyDate === today) {
         return;
     }
@@ -151,7 +151,7 @@ function applyMissedDaysPenalty() {
         // Apply linear penalty for each missed day
         // Base penalty is 5 points per day, increases by 5 for each consecutive missed day
         for (let i = 0; i < missedDays; i++) {
-            const penalty = 5 + (appState.consecutiveSkips + i) * 5;
+            const penalty = 5 * (1 + appState.consecutiveSkips + i);
             appState.score = Math.max(0, appState.score - penalty);
         }
         
