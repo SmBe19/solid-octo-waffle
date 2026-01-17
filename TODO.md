@@ -58,6 +58,7 @@
 - [ ] Implement a customizable difficulty level for exercise generation.
 - [ ] Enable sharing progress on social media platforms.
 - [ ] Add support for multiple languages.
+- [ ] Randomize the number of repetitions and the type of exercise separately.
 
 ---
 
