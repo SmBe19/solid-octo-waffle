@@ -120,7 +120,7 @@ function generateExercise(exerciseIndex) {
     
     // Use stored ranges if available, otherwise use defaults
     let minReps, maxReps;
-    if (appState.exerciseRanges[exerciseIndex]) {
+    if (appState.exerciseRanges && appState.exerciseRanges[exerciseIndex]) {
         minReps = appState.exerciseRanges[exerciseIndex].minReps;
         maxReps = appState.exerciseRanges[exerciseIndex].maxReps;
     } else {
