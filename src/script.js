@@ -78,10 +78,6 @@ function loadState() {
         const savedState = localStorage.getItem('exerciseAppState');
         if (savedState) {
             appState = JSON.parse(savedState);
-            // Ensure exerciseRanges exists for backward compatibility
-            if (!appState.exerciseRanges) {
-                appState.exerciseRanges = {};
-            }
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
@@ -119,15 +115,12 @@ function daysBetween(date1, date2) {
 }
 
 // Generate an exercise with random reps from the range
-function generateExercise(exerciseIndex, customMinReps = null, customMaxReps = null) {
+function generateExercise(exerciseIndex) {
     const definition = exerciseDefinitions[exerciseIndex];
     
-    // Use custom ranges if provided, otherwise check stored ranges, then use defaults
+    // Use stored ranges if available, otherwise use defaults
     let minReps, maxReps;
-    if (customMinReps !== null && customMaxReps !== null) {
-        minReps = customMinReps;
-        maxReps = customMaxReps;
-    } else if (appState.exerciseRanges[exerciseIndex]) {
+    if (appState.exerciseRanges[exerciseIndex]) {
         minReps = appState.exerciseRanges[exerciseIndex].minReps;
         maxReps = appState.exerciseRanges[exerciseIndex].maxReps;
     } else {
@@ -200,8 +193,9 @@ function updateUI() {
             rangeText.textContent = `Range: ${minReps}-${maxReps} reps`;
         }
         
-        decreaseRangeBtn.disabled = appState.currentExercise.minReps <= definition.minReps && 
-                                      appState.currentExercise.maxReps <= definition.maxReps;
+        // Disable decrease button if both min and max are already at 1
+        decreaseRangeBtn.disabled = appState.currentExercise.minReps <= 1 && 
+                                      appState.currentExercise.maxReps <= 1;
     }
 }
 
@@ -308,28 +302,22 @@ function increaseRange() {
 function decreaseRange() {
     if (!appState.currentExercise) return;
     
-    const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
     const rangeDecrease = 5;
     
-    // Don't go below the default minimum
-    const newMinReps = Math.max(definition.minReps, appState.currentExercise.minReps - rangeDecrease);
-    const newMaxReps = Math.max(definition.maxReps, appState.currentExercise.maxReps - rangeDecrease);
+    // Ensure reps stay above 0
+    const newMinReps = Math.max(1, appState.currentExercise.minReps - rangeDecrease);
+    const newMaxReps = Math.max(1, appState.currentExercise.maxReps - rangeDecrease);
     
     // Only update if we can actually decrease
     if (newMinReps < appState.currentExercise.minReps || newMaxReps < appState.currentExercise.maxReps) {
         appState.currentExercise.minReps = newMinReps;
         appState.currentExercise.maxReps = newMaxReps;
         
-        // Store or remove the custom range for this exercise
-        if (newMinReps === definition.minReps && newMaxReps === definition.maxReps) {
-            // Back to defaults, remove custom range
-            delete appState.exerciseRanges[appState.currentExercise.exerciseIndex];
-        } else {
-            appState.exerciseRanges[appState.currentExercise.exerciseIndex] = {
-                minReps: newMinReps,
-                maxReps: newMaxReps
-            };
-        }
+        // Store the custom range for this exercise
+        appState.exerciseRanges[appState.currentExercise.exerciseIndex] = {
+            minReps: newMinReps,
+            maxReps: newMaxReps
+        };
         
         // Regenerate reps within new range
         const minReps = appState.currentExercise.minReps;
