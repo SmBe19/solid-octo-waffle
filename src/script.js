@@ -189,6 +189,7 @@ function updateUI() {
         const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
         const minReps = appState.currentExercise.minReps;
         const maxReps = appState.currentExercise.maxReps;
+        const rangeDecrease = definition.unit === "seconds" ? 5 : 2;
         
         // Format range display based on unit type
         if (definition.unit === "seconds") {
@@ -197,9 +198,8 @@ function updateUI() {
             rangeText.textContent = `Range: ${minReps}-${maxReps} reps`;
         }
         
-        // Disable decrease button if both min and max are already at 1
-        decreaseRangeBtn.disabled = appState.currentExercise.minReps <= 1 && 
-                                      appState.currentExercise.maxReps <= 1;
+        // Disable decrease button if we can't decrease by the full amount while keeping both >= 1
+        decreaseRangeBtn.disabled = (minReps - rangeDecrease < 1) || (maxReps - rangeDecrease < 1);
     }
 }
 
@@ -284,7 +284,9 @@ function increaseRange() {
     if (!appState.currentExercise) return;
     if (!appState.exerciseRanges) appState.exerciseRanges = {};
     
-    const rangeIncrease = 5;
+    const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+    const rangeIncrease = definition.unit === "seconds" ? 5 : 2;
+    
     appState.currentExercise.minReps += rangeIncrease;
     appState.currentExercise.maxReps += rangeIncrease;
     
@@ -308,21 +310,23 @@ function decreaseRange() {
     if (!appState.currentExercise) return;
     if (!appState.exerciseRanges) appState.exerciseRanges = {};
     
-    const rangeDecrease = 5;
+    const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+    const rangeDecrease = definition.unit === "seconds" ? 5 : 2;
     
-    // Ensure reps stay at or above 1
-    const newMinReps = Math.max(1, appState.currentExercise.minReps - rangeDecrease);
-    const newMaxReps = Math.max(newMinReps, Math.max(1, appState.currentExercise.maxReps - rangeDecrease));
+    // Calculate potential new values
+    const potentialMinReps = appState.currentExercise.minReps - rangeDecrease;
+    const potentialMaxReps = appState.currentExercise.maxReps - rangeDecrease;
     
-    // Only update if we can actually decrease
-    if (newMinReps < appState.currentExercise.minReps || newMaxReps < appState.currentExercise.maxReps) {
-        appState.currentExercise.minReps = newMinReps;
-        appState.currentExercise.maxReps = newMaxReps;
+    // Only decrease if we can decrease by the full amount and both stay above 0
+    // This ensures we don't reduce the size of the range
+    if (potentialMinReps >= 1 && potentialMaxReps >= 1) {
+        appState.currentExercise.minReps = potentialMinReps;
+        appState.currentExercise.maxReps = potentialMaxReps;
         
         // Store the custom range for this exercise
         appState.exerciseRanges[appState.currentExercise.exerciseIndex] = {
-            minReps: newMinReps,
-            maxReps: newMaxReps
+            minReps: potentialMinReps,
+            maxReps: potentialMaxReps
         };
         
         // Regenerate reps within new range
