@@ -232,6 +232,23 @@ function getNewExercise() {
     updateUI();
 }
 
+// Service Worker registration
+let serviceWorkerRegistration = null;
+
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            serviceWorkerRegistration = await navigator.serviceWorker.register('./service-worker.js');
+            console.log('Service Worker registered successfully');
+            return serviceWorkerRegistration;
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+            return null;
+        }
+    }
+    return null;
+}
+
 // Request notification permission
 async function requestNotificationPermission() {
     if (!('Notification' in window)) {
@@ -252,19 +269,31 @@ async function requestNotificationPermission() {
 }
 
 // Show a notification
-function showNotification() {
+async function showNotification() {
     if (Notification.permission === 'granted') {
         const exercise = generateDailyExercise();
-        new Notification('Time for your exercise! 💪', {
-            body: `Today's exercise: ${exercise}`,
-            tag: 'daily-exercise',
-            requireInteraction: false
-        });
+        
+        // Use Service Worker notification if available (works even when page is closed)
+        if (serviceWorkerRegistration) {
+            await serviceWorkerRegistration.showNotification('Time for your exercise! 💪', {
+                body: `Today's exercise: ${exercise}`,
+                tag: 'daily-exercise',
+                requireInteraction: false,
+                vibrate: [200, 100, 200]
+            });
+        } else {
+            // Fallback to regular notification (only works when page is open)
+            new Notification('Time for your exercise! 💪', {
+                body: `Today's exercise: ${exercise}`,
+                tag: 'daily-exercise',
+                requireInteraction: false
+            });
+        }
     }
 }
 
 // Check if it's time to send notification and send if needed
-function checkAndSendNotification() {
+async function checkAndSendNotification() {
     const now = new Date();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     
@@ -274,14 +303,14 @@ function checkAndSendNotification() {
         const lastNotificationDate = localStorage.getItem('lastNotificationDate');
         
         if (lastNotificationDate !== today) {
-            showNotification();
+            await showNotification();
             localStorage.setItem('lastNotificationDate', today);
         }
     }
 }
 
 // Schedule daily notification
-function scheduleDailyNotification() {
+async function scheduleDailyNotification() {
     // Clear any existing interval
     if (window.notificationInterval) {
         clearInterval(window.notificationInterval);
@@ -291,11 +320,44 @@ function scheduleDailyNotification() {
         return;
     }
     
-    // Check every minute if it's time to send notification
+    // Store settings in cache for service worker access
+    try {
+        const cache = await caches.open('notification-cache');
+        await cache.put('notificationSettings', new Response(JSON.stringify({
+            enabled: appState.notificationsEnabled,
+            notificationTime: appState.notificationTime
+        })));
+    } catch (error) {
+        console.log('Could not store notification settings in cache:', error);
+    }
+    
+    // Try to use Periodic Background Sync if available (allows notifications when page is closed)
+    if (serviceWorkerRegistration && 'periodicSync' in serviceWorkerRegistration) {
+        try {
+            // Request permission for periodic background sync (checks every ~15 minutes minimum)
+            await serviceWorkerRegistration.periodicSync.register('check-notification', {
+                minInterval: 15 * 60 * 1000 // 15 minutes
+            });
+            console.log('Periodic Background Sync registered');
+        } catch (error) {
+            console.log('Periodic Background Sync not available:', error);
+        }
+    }
+    
+    // Always use interval as fallback for when page is open (more accurate timing)
     window.notificationInterval = setInterval(checkAndSendNotification, 60000);
     
+    // Send message to service worker to keep it aware of the schedule
+    if (serviceWorkerRegistration && serviceWorkerRegistration.active) {
+        serviceWorkerRegistration.active.postMessage({
+            type: 'SCHEDULE_NOTIFICATION',
+            notificationTime: appState.notificationTime,
+            enabled: true
+        });
+    }
+    
     // Also check immediately in case we're at the right time
-    checkAndSendNotification();
+    await checkAndSendNotification();
 }
 
 // Handle notification toggle
@@ -307,7 +369,7 @@ async function handleNotificationToggle() {
         if (hasPermission) {
             appState.notificationsEnabled = true;
             notificationTime.disabled = false;
-            scheduleDailyNotification();
+            await scheduleDailyNotification();
         } else {
             // Permission denied, revert toggle
             notificationsToggle.checked = false;
@@ -320,6 +382,15 @@ async function handleNotificationToggle() {
         if (window.notificationInterval) {
             clearInterval(window.notificationInterval);
         }
+        
+        // Notify service worker to stop checking
+        if (serviceWorkerRegistration && serviceWorkerRegistration.active) {
+            serviceWorkerRegistration.active.postMessage({
+                type: 'SCHEDULE_NOTIFICATION',
+                notificationTime: appState.notificationTime,
+                enabled: false
+            });
+        }
     }
     
     saveState();
@@ -327,19 +398,22 @@ async function handleNotificationToggle() {
 }
 
 // Handle notification time change
-function handleNotificationTimeChange() {
+async function handleNotificationTimeChange() {
     appState.notificationTime = notificationTime.value;
     saveState();
     
     // Reschedule with new time
     if (appState.notificationsEnabled) {
-        scheduleDailyNotification();
+        await scheduleDailyNotification();
     }
 }
 
 // Initialize the app
-function initApp() {
+async function initApp() {
     loadState();
+    
+    // Register service worker for background notifications
+    await registerServiceWorker();
     
     // Get today's exercise (use daily exercise if no current exercise set)
     if (!appState.currentExercise) {
@@ -358,7 +432,7 @@ function initApp() {
     
     // Set up notifications if enabled
     if (appState.notificationsEnabled) {
-        scheduleDailyNotification();
+        await scheduleDailyNotification();
     }
     
     console.log('App initialized successfully');
