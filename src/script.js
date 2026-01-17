@@ -403,8 +403,10 @@ async function requestNotificationPermission() {
 // Generate notification text for today's exercise
 function getNotificationExerciseText() {
     const today = getTodayDate();
-    const dateNumber = new Date(today).getTime();
-    const index = dateNumber % exerciseDefinitions.length;
+    // Use consistent date-based index calculation (without time component)
+    const date = new Date(today + 'T00:00:00');
+    const dateNumber = date.getTime();
+    const index = Math.floor(dateNumber / MS_PER_DAY) % exerciseDefinitions.length;
     const exercise = generateExercise(index);
     return formatExercise(exercise);
 }
