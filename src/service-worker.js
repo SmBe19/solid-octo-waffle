@@ -73,53 +73,54 @@ async function checkScheduledNotifications() {
 // Check if it's time to show notification
 async function checkAndShowNotification(notificationTime) {
     const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const today = now.toISOString().split('T')[0];
     
-    if (currentTime === notificationTime) {
-        const today = now.toISOString().split('T')[0];
-        
-        // Check if we already sent a notification today
-        const cache = await caches.open('notification-cache');
-        const lastNotificationDate = await cache.match('lastNotificationDate');
-        
-        let shouldSend = true;
-        if (lastNotificationDate) {
-            const lastDate = await lastNotificationDate.text();
-            if (lastDate === today) {
-                shouldSend = false;
+    // Check if we already sent a notification today
+    const cache = await caches.open('notification-cache');
+    const lastNotificationDate = await cache.match('lastNotificationDate');
+    
+    if (lastNotificationDate) {
+        const lastDate = await lastNotificationDate.text();
+        if (lastDate === today) {
+            return; // Already sent notification today
+        }
+    }
+    
+    // Parse notification time
+    const [notifHours, notifMinutes] = notificationTime.split(':').map(Number);
+    const notifTimeInMinutes = notifHours * 60 + notifMinutes;
+    const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Send notification if current time is at or past the notification time
+    if (currentTimeInMinutes >= notifTimeInMinutes && self.registration) {
+        // Get today's exercise from cache
+        let exercise = "your daily exercise";
+        try {
+            const exercisesResponse = await cache.match('exercises');
+            if (exercisesResponse) {
+                const exercises = await exercisesResponse.json();
+                const dateNumber = now.getTime();
+                const index = dateNumber % exercises.length;
+                exercise = exercises[index];
             }
+        } catch (error) {
+            console.error('Could not load exercises from cache:', error);
         }
         
-        if (shouldSend && self.registration) {
-            // Get today's exercise from cache
-            let exercise = "your daily exercise";
-            try {
-                const exercisesResponse = await cache.match('exercises');
-                if (exercisesResponse) {
-                    const exercises = await exercisesResponse.json();
-                    const dateNumber = now.getTime();
-                    const index = dateNumber % exercises.length;
-                    exercise = exercises[index];
-                }
-            } catch (error) {
-                console.error('Could not load exercises from cache:', error);
+        // Show notification
+        await self.registration.showNotification('Time for your exercise! 💪', {
+            body: `Today's exercise: ${exercise}`,
+            tag: NOTIFICATION_TAG,
+            requireInteraction: false,
+            vibrate: [200, 100, 200],
+            data: {
+                dateOfArrival: Date.now(),
+                primaryKey: 1
             }
-            
-            // Show notification
-            await self.registration.showNotification('Time for your exercise! 💪', {
-                body: `Today's exercise: ${exercise}`,
-                tag: NOTIFICATION_TAG,
-                requireInteraction: false,
-                vibrate: [200, 100, 200],
-                data: {
-                    dateOfArrival: Date.now(),
-                    primaryKey: 1
-                }
-            });
-            
-            // Store the date we sent the notification
-            await cache.put('lastNotificationDate', new Response(today));
-        }
+        });
+        
+        // Store the date we sent the notification
+        await cache.put('lastNotificationDate', new Response(today));
     }
 }
 

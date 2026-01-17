@@ -296,16 +296,23 @@ async function showNotification() {
 async function checkAndSendNotification() {
     const now = new Date();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const today = getTodayDate();
+    const lastNotificationDate = localStorage.getItem('lastNotificationDate');
     
-    // Check if it's the notification time and we haven't sent one today
-    if (currentTime === appState.notificationTime) {
-        const today = getTodayDate();
-        const lastNotificationDate = localStorage.getItem('lastNotificationDate');
-        
-        if (lastNotificationDate !== today) {
-            await showNotification();
-            localStorage.setItem('lastNotificationDate', today);
-        }
+    // Check if we already sent a notification today
+    if (lastNotificationDate === today) {
+        return; // Already sent notification today
+    }
+    
+    // Parse notification time
+    const [notifHours, notifMinutes] = appState.notificationTime.split(':').map(Number);
+    const notifTimeInMinutes = notifHours * 60 + notifMinutes;
+    const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Send notification if current time is at or past the notification time
+    if (currentTimeInMinutes >= notifTimeInMinutes) {
+        await showNotification();
+        localStorage.setItem('lastNotificationDate', today);
     }
 }
 
