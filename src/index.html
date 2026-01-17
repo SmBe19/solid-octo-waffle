@@ -57,6 +57,28 @@
                 </div>
             </div>
         </section>
+
+        <section id="settings-section">
+            <h2>
+                <span>Settings</span>
+                <button id="settings-toggle" class="toggle-btn" title="Toggle settings">▶</button>
+            </h2>
+            <div id="settings-content" class="settings-content">
+                <div class="setting-item">
+                    <label class="setting-label">
+                        <input type="checkbox" id="notifications-toggle" class="toggle-checkbox">
+                        <span>Enable Daily Reminders</span>
+                    </label>
+                </div>
+                <div class="setting-item" id="time-picker-container">
+                    <label for="notification-time" class="setting-label">Reminder Time:</label>
+                    <input type="time" id="notification-time" class="time-input" value="20:00">
+                </div>
+                <div class="setting-info">
+                    <p>💡 Tip: Keep this page open in a browser tab for reliable notifications. Some browsers may require the page to be open to deliver notifications on time.</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer>

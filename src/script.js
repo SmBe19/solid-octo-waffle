@@ -62,6 +62,9 @@ const motivationalMessage = document.getElementById('motivational-message');
 const increaseRangeBtn = document.getElementById('increase-range-btn');
 const decreaseRangeBtn = document.getElementById('decrease-range-btn');
 const rangeText = document.getElementById('range-text');
+const notificationsToggle = document.getElementById('notifications-toggle');
+const notificationTime = document.getElementById('notification-time');
+const settingsToggle = document.getElementById('settings-toggle');
 
 // Initialize app state
 let appState = {
@@ -69,7 +72,9 @@ let appState = {
     daysCompleted: 0,
     currentExercise: null, // Now stores { exerciseIndex, reps, minReps, maxReps }
     lastCompletedDate: null,
-    exerciseRanges: {} // Stores custom ranges per exercise: { exerciseIndex: { minReps, maxReps } }
+    exerciseRanges: {}, // Stores custom ranges per exercise: { exerciseIndex: { minReps, maxReps } }
+    notificationsEnabled: false,
+    notificationTime: '20:00'
 };
 
 // Load state from localStorage
@@ -82,6 +87,13 @@ function loadState() {
             if (!appState.exerciseRanges) {
                 appState.exerciseRanges = {};
             }
+            // Ensure notification properties have defaults if not present
+            if (appState.notificationsEnabled === undefined) {
+                appState.notificationsEnabled = false;
+            }
+            if (appState.notificationTime === undefined) {
+                appState.notificationTime = '20:00';
+            }
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
@@ -91,7 +103,9 @@ function loadState() {
             daysCompleted: 0,
             currentExercise: null,
             lastCompletedDate: null,
-            exerciseRanges: {}
+            exerciseRanges: {},
+            notificationsEnabled: false,
+            notificationTime: '20:00'
         };
     }
 }
@@ -200,6 +214,13 @@ function updateUI() {
         
         // Disable decrease button if we can't decrease by the full amount while keeping both >= 1
         decreaseRangeBtn.disabled = (minReps - rangeDecrease < 1) || (maxReps - rangeDecrease < 1);
+    }
+    
+    // Update notification settings UI
+    if (notificationsToggle && notificationTime) {
+        notificationsToggle.checked = appState.notificationsEnabled;
+        notificationTime.value = appState.notificationTime;
+        notificationTime.disabled = !appState.notificationsEnabled;
     }
 }
 
@@ -339,9 +360,209 @@ function decreaseRange() {
     }
 }
 
+// ============================================
+// NOTIFICATION SYSTEM
+// ============================================
+
+// Service Worker registration
+let serviceWorkerRegistration = null;
+
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            serviceWorkerRegistration = await navigator.serviceWorker.register('/service-worker.js');
+            console.log('Service Worker registered successfully');
+            return serviceWorkerRegistration;
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+            return null;
+        }
+    }
+    return null;
+}
+
+// Request notification permission
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        console.log('This browser does not support notifications');
+        return false;
+    }
+    
+    if (Notification.permission === 'granted') {
+        return true;
+    }
+    
+    if (Notification.permission !== 'denied') {
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+    }
+    
+    return false;
+}
+
+// Show a notification
+async function showNotification() {
+    if (Notification.permission === 'granted') {
+        // Use Service Worker notification if available (works even when page is closed)
+        if (serviceWorkerRegistration) {
+            await serviceWorkerRegistration.showNotification('Time for your exercise! 💪', {
+                body: 'Time to do your daily exercise!',
+                tag: 'daily-exercise-reminder',
+                requireInteraction: false,
+                vibrate: [200, 100, 200]
+            });
+        } else {
+            // Fallback to regular notification (only works when page is open)
+            new Notification('Time for your exercise! 💪', {
+                body: 'Time to do your daily exercise!',
+                tag: 'daily-exercise-reminder',
+                requireInteraction: false
+            });
+        }
+    }
+}
+
+// Check if it's time to send notification and send if needed
+async function checkAndSendNotification() {
+    const now = new Date();
+    const today = getTodayDate();
+    const lastNotificationDate = localStorage.getItem('lastNotificationDate');
+    
+    // Check if we already sent a notification today
+    if (lastNotificationDate === today) {
+        return; // Already sent notification today
+    }
+    
+    // Parse notification time
+    const [notifHours, notifMinutes] = appState.notificationTime.split(':').map(Number);
+    const notifTimeInMinutes = notifHours * 60 + notifMinutes;
+    const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Send notification if current time is at or past the notification time
+    if (currentTimeInMinutes >= notifTimeInMinutes) {
+        await showNotification();
+        localStorage.setItem('lastNotificationDate', today);
+    }
+}
+
+// Schedule daily notification
+async function scheduleDailyNotification() {
+    // Clear any existing interval
+    if (window.notificationInterval) {
+        clearInterval(window.notificationInterval);
+    }
+    
+    if (!appState.notificationsEnabled) {
+        return;
+    }
+    
+    // Store settings in cache for service worker access
+    try {
+        const cache = await caches.open('notification-cache');
+        await cache.put('notificationSettings', new Response(JSON.stringify({
+            enabled: appState.notificationsEnabled,
+            notificationTime: appState.notificationTime
+        })));
+    } catch (error) {
+        console.log('Could not store notification settings in cache:', error);
+    }
+    
+    // Try to use Periodic Background Sync if available (allows notifications when page is closed)
+    if (serviceWorkerRegistration && 'periodicSync' in serviceWorkerRegistration) {
+        try {
+            await serviceWorkerRegistration.periodicSync.register('check-notification', {
+                minInterval: 15 * 60 * 1000 // 15 minutes
+            });
+            console.log('Periodic Background Sync registered');
+        } catch (error) {
+            console.log('Periodic Background Sync not available:', error);
+        }
+    }
+    
+    // Always use interval as fallback for when page is open (more accurate timing)
+    window.notificationInterval = setInterval(checkAndSendNotification, 60000);
+    
+    // Send message to service worker to keep it aware of the schedule
+    if (serviceWorkerRegistration && serviceWorkerRegistration.active) {
+        serviceWorkerRegistration.active.postMessage({
+            type: 'SCHEDULE_NOTIFICATION',
+            notificationTime: appState.notificationTime,
+            enabled: true
+        });
+    }
+    
+    // Also check immediately in case we're at the right time
+    await checkAndSendNotification();
+}
+
+// Handle notification toggle
+async function handleNotificationToggle() {
+    const isEnabled = notificationsToggle.checked;
+    
+    if (isEnabled) {
+        const hasPermission = await requestNotificationPermission();
+        if (hasPermission) {
+            appState.notificationsEnabled = true;
+            notificationTime.disabled = false;
+            await scheduleDailyNotification();
+        } else {
+            // Permission denied, revert toggle
+            notificationsToggle.checked = false;
+            appState.notificationsEnabled = false;
+            alert('Notification permission was denied. Please allow notifications when prompted or reset permission in your browser.');
+        }
+    } else {
+        appState.notificationsEnabled = false;
+        notificationTime.disabled = true;
+        if (window.notificationInterval) {
+            clearInterval(window.notificationInterval);
+        }
+        
+        // Notify service worker to stop checking
+        if (serviceWorkerRegistration && serviceWorkerRegistration.active) {
+            serviceWorkerRegistration.active.postMessage({
+                type: 'SCHEDULE_NOTIFICATION',
+                notificationTime: appState.notificationTime,
+                enabled: false
+            });
+        }
+    }
+    
+    saveState();
+    updateUI();
+}
+
+// Handle notification time change
+async function handleNotificationTimeChange() {
+    appState.notificationTime = notificationTime.value;
+    saveState();
+    
+    // Reschedule with new time
+    if (appState.notificationsEnabled) {
+        await scheduleDailyNotification();
+    }
+}
+
+// Handle settings toggle
+function handleSettingsToggle() {
+    const settingsContent = document.getElementById('settings-content');
+    const isCollapsed = settingsContent.style.display === 'none';
+    
+    if (isCollapsed) {
+        settingsContent.style.display = 'block';
+        settingsToggle.textContent = '▼';
+    } else {
+        settingsContent.style.display = 'none';
+        settingsToggle.textContent = '▶';
+    }
+}
+
 // Initialize the app
-function initApp() {
+async function initApp() {
     loadState();
+    
+    // Register service worker for background notifications
+    await registerServiceWorker();
     
     // Get today's exercise (use random exercise if no current exercise set)
     if (!appState.currentExercise) {
@@ -357,6 +578,28 @@ function initApp() {
     newExerciseBtn.addEventListener('click', getNewExercise);
     increaseRangeBtn.addEventListener('click', increaseRange);
     decreaseRangeBtn.addEventListener('click', decreaseRange);
+    
+    // Add notification event listeners if elements exist
+    if (notificationsToggle) {
+        notificationsToggle.addEventListener('change', handleNotificationToggle);
+    }
+    if (notificationTime) {
+        notificationTime.addEventListener('change', handleNotificationTimeChange);
+    }
+    if (settingsToggle) {
+        settingsToggle.addEventListener('click', handleSettingsToggle);
+        // Initialize settings as collapsed
+        const settingsContent = document.getElementById('settings-content');
+        if (settingsContent) {
+            settingsContent.style.display = 'none';
+            settingsToggle.textContent = '▶';
+        }
+    }
+    
+    // Set up notifications if enabled
+    if (appState.notificationsEnabled) {
+        await scheduleDailyNotification();
+    }
     
     console.log('App initialized successfully');
 }
