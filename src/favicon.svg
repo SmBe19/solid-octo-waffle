@@ -3,7 +3,7 @@
   <circle cx="32" cy="32" r="30" fill="#667eea" stroke="#5568d3" stroke-width="2"/>
   
   <!-- Waffle grid pattern -->
-  <g fill="#7c8ef0" stroke="#5568d3" stroke-width="0.5">
+  <g fill="#8b9bef" stroke="#4a5bb8" stroke-width="0.5">
     <!-- Horizontal lines -->
     <line x1="18" y1="22" x2="46" y2="22" stroke-width="1"/>
     <line x1="18" y1="28" x2="46" y2="28" stroke-width="1"/>
@@ -16,10 +16,10 @@
   </g>
   
   <!-- Waffle shape (rounded square) -->
-  <rect x="16" y="16" width="32" height="32" rx="4" ry="4" fill="none" stroke="#4a5bb8" stroke-width="2"/>
+  <rect x="16" y="16" width="32" height="32" rx="4" ry="4" fill="none" stroke="#3d4db0" stroke-width="2"/>
   
   <!-- Fitness dumbbell overlay -->
-  <g fill="#11998e" stroke="#0d7a72" stroke-width="1.5">
+  <g fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5">
     <!-- Left weight -->
     <rect x="20" y="24" width="4" height="16" rx="1"/>
     <!-- Right weight -->
