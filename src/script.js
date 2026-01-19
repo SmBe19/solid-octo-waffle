@@ -71,6 +71,7 @@ let appState = {
     score: 0,
     daysCompleted: 0,
     currentExercise: null, // Now stores { exerciseIndex, reps, minReps, maxReps }
+    exerciseGeneratedDate: null, // Tracks when current exercise was generated (YYYY-MM-DD)
     lastCompletedDate: null,
     exerciseRanges: {}, // Stores custom ranges per exercise: { exerciseIndex: { minReps, maxReps } }
     notificationsEnabled: false,
@@ -102,6 +103,7 @@ function loadState() {
             score: 0,
             daysCompleted: 0,
             currentExercise: null,
+            exerciseGeneratedDate: null,
             lastCompletedDate: null,
             exerciseRanges: {},
             notificationsEnabled: false,
@@ -296,8 +298,27 @@ function completeExercise() {
 function getNewExercise() {
     const newExercise = generateRandomExercise();
     appState.currentExercise = newExercise;
+    appState.exerciseGeneratedDate = getTodayDate();
     saveState();
     updateUI();
+}
+
+// Check if we need a new exercise for the day
+function checkAndUpdateDailyExercise() {
+    const today = getTodayDate();
+    
+    // Generate new exercise if:
+    // 1. No current exercise exists, OR
+    // 2. Exercise was generated on a different day
+    if (!appState.currentExercise || appState.exerciseGeneratedDate !== today) {
+        const newExercise = generateRandomExercise();
+        appState.currentExercise = newExercise;
+        appState.exerciseGeneratedDate = today;
+        saveState();
+        return true; // Exercise was updated
+    }
+    
+    return false; // No update needed
 }
 
 // Increase the repetition range for current exercise
@@ -648,11 +669,8 @@ async function initApp() {
     // Register service worker for background notifications
     await registerServiceWorker();
     
-    // Get today's exercise (use random exercise if no current exercise set)
-    if (!appState.currentExercise) {
-        appState.currentExercise = generateRandomExercise();
-        saveState();
-    }
+    // Check if we need a new exercise for today
+    checkAndUpdateDailyExercise();
     
     // Update UI
     updateUI();
@@ -684,6 +702,16 @@ async function initApp() {
     if (appState.notificationsEnabled) {
         await scheduleDailyNotification();
     }
+    
+    // Set up periodic check for day change (every 60 seconds)
+    // This ensures the exercise updates even if the app stays open overnight
+    setInterval(() => {
+        const wasUpdated = checkAndUpdateDailyExercise();
+        if (wasUpdated) {
+            updateUI();
+            console.log('Exercise updated for new day');
+        }
+    }, 60000); // Check every minute
     
     console.log('App initialized successfully');
 }
