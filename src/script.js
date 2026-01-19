@@ -253,6 +253,12 @@ function updateUI() {
 // TIMER FUNCTIONS
 // ============================================
 
+// Timer completion sound constants
+const COMPLETION_SOUND_FREQUENCY = 800; // Hz
+const SOUND_INITIAL_VOLUME = 0.3;
+const SOUND_END_VOLUME = 0.01;
+const SOUND_DURATION = 0.5; // seconds
+
 // Format time in MM:SS format
 function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
@@ -379,14 +385,14 @@ function playCompletionSound() {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        oscillator.frequency.value = 800;
+        oscillator.frequency.value = COMPLETION_SOUND_FREQUENCY;
         oscillator.type = 'sine';
         
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        gainNode.gain.setValueAtTime(SOUND_INITIAL_VOLUME, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(SOUND_END_VOLUME, audioContext.currentTime + SOUND_DURATION);
         
         oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
+        oscillator.stop(audioContext.currentTime + SOUND_DURATION);
     } catch (err) {
         console.log('Could not play completion sound:', err);
     }
@@ -869,6 +875,9 @@ async function initApp() {
         if (document.visibilityState === 'visible' && timerState.isRunning) {
             // Reacquire wake lock when page becomes visible again
             await requestWakeLock();
+        } else if (document.visibilityState === 'hidden') {
+            // Release wake lock when page becomes hidden to conserve resources
+            await releaseWakeLock();
         }
     });
     
