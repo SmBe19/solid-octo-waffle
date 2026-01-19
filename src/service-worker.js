@@ -1,6 +1,7 @@
 // Service Worker for handling notifications and offline caching (PWA support)
 
-const CACHE_NAME = 'daily-exercise-v1';
+const CACHE_VERSION = '2026-01-19-001'; // Update this version when deploying changes
+const CACHE_NAME = `daily-exercise-v${CACHE_VERSION}`;
 const NOTIFICATION_TAG = 'daily-exercise-reminder';
 
 // Send message to all clients about the update
@@ -36,8 +37,10 @@ self.addEventListener('install', (event) => {
                 return cache.addAll(urlsToCache);
             })
             .then(() => {
-                // Notify clients about the update (don't skip waiting automatically)
+                // Notify clients about the update
                 notifyClientsAboutUpdate();
+                // Immediately activate the new service worker
+                return self.skipWaiting();
             })
     );
 });
@@ -59,8 +62,51 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network-first for HTML, cache-first for assets
 self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+    
+    // Network-first strategy for HTML files to ensure updates are fetched
+    if (event.request.mode === 'navigate' || event.request.destination === 'document' || 
+        url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname === '/index.html') {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Clone and cache the response
+                    if (response && response.status === 200) {
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME)
+                            .then((cache) => {
+                                cache.put(event.request, responseToCache);
+                            })
+                            .catch((error) => {
+                                console.error('Failed to cache:', error);
+                            });
+                    }
+                    return response;
+                })
+                .catch((error) => {
+                    // Fallback to cache if network fails
+                    console.log('Network failed, falling back to cache');
+                    return caches.match(event.request)
+                        .then((response) => {
+                            if (response) {
+                                return response;
+                            }
+                            return new Response('Offline - content not available', {
+                                status: 503,
+                                statusText: 'Service Unavailable',
+                                headers: new Headers({
+                                    'Content-Type': 'text/plain'
+                                })
+                            });
+                        });
+                })
+        );
+        return;
+    }
+    
+    // Cache-first strategy for other assets (CSS, JS, images)
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
