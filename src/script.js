@@ -90,6 +90,7 @@ let appState = {
     score: 0,
     daysCompleted: 0,
     currentExercise: null, // Now stores { exerciseIndex, reps, minReps, maxReps }
+    exerciseGeneratedDate: null, // Tracks when current exercise was generated (YYYY-MM-DD)
     lastCompletedDate: null,
     exercisesCompletedToday: 0, // Tracks number of exercises completed today
     exerciseRanges: {}, // Stores custom ranges per exercise: { exerciseIndex: { minReps, maxReps } }
@@ -114,11 +115,15 @@ function loadState() {
             if (appState.notificationTime === undefined) {
                 appState.notificationTime = '20:00';
             }
+            // Ensure exerciseGeneratedDate exists for backward compatibility
+            if (appState.exerciseGeneratedDate === undefined) {
+                appState.exerciseGeneratedDate = null;
+            }
             // Ensure exercisesCompletedToday exists
             if (appState.exercisesCompletedToday === undefined) {
                 appState.exercisesCompletedToday = 0;
             }
-            // Note: Counter will be reset in completeExercise() if it's a new day
+            // Note: Counter will be reset in completeExercise() when first exercise is completed on a new day
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
@@ -127,6 +132,7 @@ function loadState() {
             score: 0,
             daysCompleted: 0,
             currentExercise: null,
+            exerciseGeneratedDate: null,
             lastCompletedDate: null,
             exercisesCompletedToday: 0,
             exerciseRanges: {},
@@ -505,14 +511,36 @@ function completeExercise() {
     }
     
     alert(message);
+    
+    // Automatically generate a new exercise after completion
+    getNewExercise();
 }
 
 // Handle new exercise request
 function getNewExercise() {
     const newExercise = generateRandomExercise();
     appState.currentExercise = newExercise;
+    appState.exerciseGeneratedDate = getTodayDate();
     saveState();
     updateUI();
+}
+
+// Check if we need a new exercise for the day
+function checkAndUpdateDailyExercise() {
+    const today = getTodayDate();
+    
+    // Generate new exercise if:
+    // 1. No current exercise exists, OR
+    // 2. Exercise was generated on a different day
+    if (!appState.currentExercise || appState.exerciseGeneratedDate !== today) {
+        const newExercise = generateRandomExercise();
+        appState.currentExercise = newExercise;
+        appState.exerciseGeneratedDate = today;
+        saveState();
+        return true; // Exercise was updated
+    }
+    
+    return false; // No update needed
 }
 
 // Increase the repetition range for current exercise
@@ -863,11 +891,8 @@ async function initApp() {
     // Register service worker for background notifications
     await registerServiceWorker();
     
-    // Get today's exercise (use random exercise if no current exercise set)
-    if (!appState.currentExercise) {
-        appState.currentExercise = generateRandomExercise();
-        saveState();
-    }
+    // Check if we need a new exercise for today
+    checkAndUpdateDailyExercise();
     
     // Update UI
     updateUI();
@@ -911,6 +936,16 @@ async function initApp() {
         await scheduleDailyNotification();
     }
     
+    // Set up periodic check for day change (every 60 seconds)
+    // This ensures the exercise updates even if the app stays open overnight
+    setInterval(() => {
+        const wasUpdated = checkAndUpdateDailyExercise();
+        if (wasUpdated) {
+            updateUI();
+            console.log('Exercise updated for new day');
+        }
+    }, 60000); // Check every minute
+
     // Handle visibility change for wake lock
     document.addEventListener('visibilitychange', async () => {
         if (document.visibilityState === 'visible' && timerState.isRunning) {
