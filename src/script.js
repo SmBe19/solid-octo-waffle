@@ -104,7 +104,7 @@ function loadState() {
             if (appState.exercisesCompletedToday === undefined) {
                 appState.exercisesCompletedToday = 0;
             }
-            // Note: Counter will be reset in completeExercise() if it's a new day
+            // Note: Counter will be reset in completeExercise() when first exercise is completed on a new day
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
