@@ -72,6 +72,7 @@ let appState = {
     daysCompleted: 0,
     currentExercise: null, // Now stores { exerciseIndex, reps, minReps, maxReps }
     lastCompletedDate: null,
+    exercisesCompletedToday: 0, // Tracks number of exercises completed today
     exerciseRanges: {}, // Stores custom ranges per exercise: { exerciseIndex: { minReps, maxReps } }
     notificationsEnabled: false,
     notificationTime: '20:00'
@@ -94,6 +95,11 @@ function loadState() {
             if (appState.notificationTime === undefined) {
                 appState.notificationTime = '20:00';
             }
+            // Ensure exercisesCompletedToday exists
+            if (appState.exercisesCompletedToday === undefined) {
+                appState.exercisesCompletedToday = 0;
+            }
+            // Note: Counter will be reset in completeExercise() if it's a new day
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
@@ -103,6 +109,7 @@ function loadState() {
             daysCompleted: 0,
             currentExercise: null,
             lastCompletedDate: null,
+            exercisesCompletedToday: 0,
             exerciseRanges: {},
             notificationsEnabled: false,
             notificationTime: '20:00'
@@ -262,34 +269,61 @@ function calculateCurrentScore() {
 function completeExercise() {
     const today = getTodayDate();
     
-    // Check if already completed today
-    if (appState.lastCompletedDate === today) {
-        alert('Great job! You\'ve already completed today\'s exercise!');
-        return;
+    // Reset counter if it's a new day
+    if (appState.lastCompletedDate !== today) {
+        appState.exercisesCompletedToday = 0;
     }
     
-    // Calculate days since last completion and apply penalties if needed
-    if (appState.lastCompletedDate) {
-        const daysSinceCompletion = daysBetween(appState.lastCompletedDate, today);
+    // Calculate points based on exercises completed today
+    let pointsToAward;
+    if (appState.exercisesCompletedToday === 0) {
+        // First exercise of the day
+        pointsToAward = 10;
         
-        // If more than 1 day has passed, update saved score with penalties
-        if (daysSinceCompletion > 1) {
-            const missedDays = daysSinceCompletion - 1;
-            appState.score = calculatePenalties(appState.score, missedDays);
+        // Calculate days since last completion and apply penalties if needed
+        if (appState.lastCompletedDate) {
+            const daysSinceCompletion = daysBetween(appState.lastCompletedDate, today);
+            
+            // If more than 1 day has passed, update saved score with penalties
+            if (daysSinceCompletion > 1) {
+                const missedDays = daysSinceCompletion - 1;
+                appState.score = calculatePenalties(appState.score, missedDays);
+            }
         }
+        
+        // Increment days completed for first exercise of the day
+        appState.daysCompleted += 1;
+        appState.lastCompletedDate = today;
+    } else if (appState.exercisesCompletedToday === 1) {
+        // Second exercise of the day
+        pointsToAward = 5;
+    } else {
+        // Third or more exercise of the day
+        pointsToAward = 2;
     }
     
-    // Increase score and days completed
-    appState.score += 10;
-    appState.daysCompleted += 1;
-    appState.lastCompletedDate = today;
+    // Award points and increment counter
+    appState.score += pointsToAward;
+    appState.exercisesCompletedToday += 1;
     
     saveState();
     updateUI();
     
-    // Show random success message
-    const randomMessage = successMessages[Math.floor(Math.random() * successMessages.length)];
-    alert(randomMessage);
+    // Show appropriate success message
+    let message;
+    if (appState.exercisesCompletedToday === 1) {
+        // First exercise of the day
+        const randomMessage = successMessages[Math.floor(Math.random() * successMessages.length)];
+        message = randomMessage + ` (+${pointsToAward} points)`;
+    } else if (appState.exercisesCompletedToday === 2) {
+        // Second exercise of the day
+        message = `Great dedication! Second exercise completed today! (+${pointsToAward} points) 🔥`;
+    } else {
+        // Third or more exercise of the day
+        message = `Wow! Exercise #${appState.exercisesCompletedToday} today! You're unstoppable! (+${pointsToAward} points) 🚀`;
+    }
+    
+    alert(message);
 }
 
 // Handle new exercise request
