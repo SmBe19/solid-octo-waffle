@@ -273,13 +273,16 @@ function calculateCurrentScore() {
 function completeExercise() {
     const today = getTodayDate();
     
+    // Reset counter if it's a new day
+    if (appState.lastCompletedDate !== today) {
+        appState.exercisesCompletedToday = 0;
+    }
+    
     // Calculate points based on exercises completed today
     let pointsToAward;
-    if (appState.lastCompletedDate !== today) {
+    if (appState.exercisesCompletedToday === 0) {
         // First exercise of the day
         pointsToAward = 10;
-        // Reset the counter for a new day
-        appState.exercisesCompletedToday = 0;
         
         // Calculate days since last completion and apply penalties if needed
         if (appState.lastCompletedDate) {
@@ -295,18 +298,12 @@ function completeExercise() {
         // Increment days completed for first exercise of the day
         appState.daysCompleted += 1;
         appState.lastCompletedDate = today;
+    } else if (appState.exercisesCompletedToday === 1) {
+        // Second exercise of the day
+        pointsToAward = 5;
     } else {
-        // Additional exercise on the same day
-        if (appState.exercisesCompletedToday === 1) {
-            // Second exercise of the day
-            pointsToAward = 5;
-        } else if (appState.exercisesCompletedToday >= 2) {
-            // Third or more exercise of the day
-            pointsToAward = 2;
-        } else {
-            // Safety fallback (shouldn't happen)
-            pointsToAward = 2;
-        }
+        // Third or more exercise of the day (exercisesCompletedToday >= 2)
+        pointsToAward = 2;
     }
     
     // Award points and increment counter
