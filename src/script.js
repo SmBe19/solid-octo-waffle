@@ -95,6 +95,10 @@ function loadState() {
             if (appState.notificationTime === undefined) {
                 appState.notificationTime = '20:00';
             }
+            // Ensure exerciseGeneratedDate exists for backward compatibility
+            if (appState.exerciseGeneratedDate === undefined) {
+                appState.exerciseGeneratedDate = null;
+            }
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
