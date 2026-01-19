@@ -65,6 +65,25 @@ const rangeText = document.getElementById('range-text');
 const notificationsToggle = document.getElementById('notifications-toggle');
 const notificationTime = document.getElementById('notification-time');
 const settingsToggle = document.getElementById('settings-toggle');
+const timerSection = document.getElementById('timer-section');
+const timerDisplay = document.getElementById('timer-display');
+const startTimerBtn = document.getElementById('start-timer-btn');
+const pauseTimerBtn = document.getElementById('pause-timer-btn');
+const resetTimerBtn = document.getElementById('reset-timer-btn');
+
+// Timer state
+let timerState = {
+    totalSeconds: 0,
+    remainingSeconds: 0,
+    isRunning: false,
+    intervalId: null
+};
+
+// Screen Wake Lock
+let wakeLock = null;
+
+// Audio context for completion sound (reuse to avoid creating multiple instances)
+let audioContext = null;
 
 // Initialize app state
 let appState = {
@@ -221,6 +240,15 @@ function updateUI() {
         
         // Disable decrease button if we can't decrease by the full amount while keeping both >= 1
         decreaseRangeBtn.disabled = (minReps - rangeDecrease < 1) || (maxReps - rangeDecrease < 1);
+        
+        // Show/hide timer for seconds-based exercises
+        if (definition.unit === "seconds") {
+            timerSection.style.display = 'block';
+            initializeTimer(appState.currentExercise.reps);
+        } else {
+            timerSection.style.display = 'none';
+            stopTimer();
+        }
     }
     
     // Update notification settings UI
@@ -228,6 +256,159 @@ function updateUI() {
         notificationsToggle.checked = appState.notificationsEnabled;
         notificationTime.value = appState.notificationTime;
         notificationTime.disabled = !appState.notificationsEnabled;
+    }
+}
+
+// ============================================
+// TIMER FUNCTIONS
+// ============================================
+
+// Timer completion sound constants
+const COMPLETION_SOUND_FREQUENCY = 800; // Hz
+const SOUND_INITIAL_VOLUME = 0.3;
+const SOUND_END_VOLUME = 0.01;
+const SOUND_DURATION = 0.5; // seconds
+
+// Format time in MM:SS format
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Initialize timer with duration
+function initializeTimer(seconds) {
+    timerState.totalSeconds = seconds;
+    timerState.remainingSeconds = seconds;
+    timerState.isRunning = false;
+    updateTimerDisplay();
+}
+
+// Update timer display
+function updateTimerDisplay() {
+    if (timerDisplay) {
+        timerDisplay.textContent = formatTime(timerState.remainingSeconds);
+    }
+}
+
+// Request screen wake lock to keep screen on
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Screen Wake Lock acquired');
+            
+            // Listen for wake lock release
+            wakeLock.addEventListener('release', () => {
+                console.log('Screen Wake Lock released');
+            });
+        }
+    } catch (err) {
+        console.log('Wake Lock error:', err);
+    }
+}
+
+// Release screen wake lock
+async function releaseWakeLock() {
+    if (wakeLock !== null) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+            console.log('Screen Wake Lock released manually');
+        } catch (err) {
+            console.log('Wake Lock release error:', err);
+        }
+    }
+}
+
+// Start timer
+function startTimer() {
+    if (timerState.isRunning) return;
+    
+    timerState.isRunning = true;
+    startTimerBtn.style.display = 'none';
+    pauseTimerBtn.style.display = 'inline-block';
+    
+    // Request wake lock to keep screen on
+    requestWakeLock();
+    
+    timerState.intervalId = setInterval(() => {
+        if (timerState.remainingSeconds > 0) {
+            timerState.remainingSeconds--;
+            updateTimerDisplay();
+        } else {
+            // Timer completed
+            stopTimer();
+            playCompletionSound();
+            alert('Time\'s up! Great job! 🎉');
+        }
+    }, 1000);
+}
+
+// Pause timer
+function pauseTimer() {
+    if (!timerState.isRunning) return;
+    
+    timerState.isRunning = false;
+    startTimerBtn.style.display = 'inline-block';
+    pauseTimerBtn.style.display = 'none';
+    
+    if (timerState.intervalId) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+    }
+    
+    // Release wake lock when paused
+    releaseWakeLock();
+}
+
+// Stop timer (reset state)
+function stopTimer() {
+    timerState.isRunning = false;
+    startTimerBtn.style.display = 'inline-block';
+    pauseTimerBtn.style.display = 'none';
+    
+    if (timerState.intervalId) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+    }
+    
+    // Release wake lock when stopped
+    releaseWakeLock();
+}
+
+// Reset timer
+function resetTimer() {
+    stopTimer();
+    timerState.remainingSeconds = timerState.totalSeconds;
+    updateTimerDisplay();
+}
+
+// Play completion sound
+function playCompletionSound() {
+    // Create a simple beep sound using Web Audio API
+    try {
+        // Create or reuse audio context
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = COMPLETION_SOUND_FREQUENCY;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(SOUND_INITIAL_VOLUME, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(SOUND_END_VOLUME, audioContext.currentTime + SOUND_DURATION);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + SOUND_DURATION);
+    } catch (err) {
+        console.log('Could not play completion sound:', err);
     }
 }
 
@@ -697,6 +878,17 @@ async function initApp() {
     increaseRangeBtn.addEventListener('click', increaseRange);
     decreaseRangeBtn.addEventListener('click', decreaseRange);
     
+    // Add timer event listeners
+    if (startTimerBtn) {
+        startTimerBtn.addEventListener('click', startTimer);
+    }
+    if (pauseTimerBtn) {
+        pauseTimerBtn.addEventListener('click', pauseTimer);
+    }
+    if (resetTimerBtn) {
+        resetTimerBtn.addEventListener('click', resetTimer);
+    }
+    
     // Add notification event listeners if elements exist
     if (notificationsToggle) {
         notificationsToggle.addEventListener('change', handleNotificationToggle);
@@ -718,6 +910,17 @@ async function initApp() {
     if (appState.notificationsEnabled) {
         await scheduleDailyNotification();
     }
+    
+    // Handle visibility change for wake lock
+    document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && timerState.isRunning) {
+            // Reacquire wake lock when page becomes visible again
+            await requestWakeLock();
+        } else if (document.visibilityState === 'hidden') {
+            // Release wake lock when page becomes hidden to conserve resources
+            await releaseWakeLock();
+        }
+    });
     
     console.log('App initialized successfully');
 }

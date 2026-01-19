@@ -76,6 +76,77 @@ main {
     text-align: center;
 }
 
+/* Timer Section */
+.timer-section {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.timer-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 1rem;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.timer-controls {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-timer {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-timer-start {
+    background-color: #11998e;
+}
+
+.btn-timer-start:hover {
+    background-color: #0e8078;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-timer-pause {
+    background-color: #f5576c;
+}
+
+.btn-timer-pause:hover {
+    background-color: #e04756;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-timer-reset {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-timer-reset:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-timer:active {
+    transform: translateY(0);
+}
+
 /* Range Info Section */
 .range-info {
     display: flex;
@@ -339,6 +410,19 @@ footer {
 
     .score-display {
         flex-direction: column;
+    }
+
+    .timer-display {
+        font-size: 2.5rem;
+    }
+
+    .timer-controls {
+        gap: 0.5rem;
+    }
+
+    .btn-timer {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
     }
 }
 
