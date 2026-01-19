@@ -93,13 +93,18 @@ self.addEventListener('fetch', (event) => {
                             if (response) {
                                 return response;
                             }
-                            return new Response('Offline - content not available', {
-                                status: 503,
-                                statusText: 'Service Unavailable',
-                                headers: new Headers({
-                                    'Content-Type': 'text/plain'
-                                })
-                            });
+                            return new Response(
+                                '<!DOCTYPE html><html><head><title>Offline</title></head>' +
+                                '<body><h1>Offline</h1><p>This page is not available offline. ' +
+                                'Please check your internet connection and try again.</p></body></html>',
+                                {
+                                    status: 503,
+                                    statusText: 'Service Unavailable',
+                                    headers: new Headers({
+                                        'Content-Type': 'text/html'
+                                    })
+                                }
+                            );
                         });
                 })
         );
@@ -139,14 +144,18 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 }).catch((error) => {
                     console.error('Fetch failed:', error);
-                    // Return a basic offline response
-                    return new Response('Offline - content not available', {
-                        status: 503,
-                        statusText: 'Service Unavailable',
-                        headers: new Headers({
-                            'Content-Type': 'text/plain'
-                        })
-                    });
+                    return new Response(
+                        '<!DOCTYPE html><html><head><title>Offline</title></head>' +
+                        '<body><h1>Offline</h1><p>This page is not available offline. ' +
+                        'Please check your internet connection and try again.</p></body></html>',
+                        {
+                            status: 503,
+                            statusText: 'Service Unavailable',
+                            headers: new Headers({
+                                'Content-Type': 'text/html'
+                            })
+                        }
+                    );
                 });
             })
     );
