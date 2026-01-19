@@ -330,6 +330,9 @@ function completeExercise() {
     }
     
     alert(message);
+    
+    // Automatically generate a new exercise after completion
+    getNewExercise();
 }
 
 // Handle new exercise request
