@@ -99,11 +99,7 @@ function loadState() {
             if (appState.exercisesCompletedToday === undefined) {
                 appState.exercisesCompletedToday = 0;
             }
-            // Reset exercisesCompletedToday if it's a new day
-            const today = getTodayDate();
-            if (appState.lastCompletedDate !== today) {
-                appState.exercisesCompletedToday = 0;
-            }
+            // Note: Counter will be reset in completeExercise() if it's a new day
         }
     } catch (error) {
         console.error('Error loading state from localStorage:', error);
@@ -302,7 +298,7 @@ function completeExercise() {
         // Second exercise of the day
         pointsToAward = 5;
     } else {
-        // Third or more exercise of the day (exercisesCompletedToday >= 2)
+        // Third or more exercise of the day
         pointsToAward = 2;
     }
     
