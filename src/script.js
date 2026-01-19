@@ -82,6 +82,9 @@ let timerState = {
 // Screen Wake Lock
 let wakeLock = null;
 
+// Audio context for completion sound (reuse to avoid creating multiple instances)
+let audioContext = null;
+
 // Initialize app state
 let appState = {
     score: 0,
@@ -378,7 +381,11 @@ function resetTimer() {
 function playCompletionSound() {
     // Create a simple beep sound using Web Audio API
     try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Create or reuse audio context
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         
