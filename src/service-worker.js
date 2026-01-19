@@ -4,6 +4,20 @@ const CACHE_VERSION = '2026-01-19-001'; // Update this version when deploying ch
 const CACHE_NAME = `daily-exercise-v${CACHE_VERSION}`;
 const NOTIFICATION_TAG = 'daily-exercise-reminder';
 
+// Offline response template
+const OFFLINE_RESPONSE = new Response(
+    '<!DOCTYPE html><html><head><title>Offline</title></head>' +
+    '<body><h1>Offline</h1><p>This page is not available offline. ' +
+    'Please check your internet connection and try again.</p></body></html>',
+    {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: new Headers({
+            'Content-Type': 'text/html'
+        })
+    }
+);
+
 // Send message to all clients about the update
 function notifyClientsAboutUpdate() {
     self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
@@ -93,18 +107,7 @@ self.addEventListener('fetch', (event) => {
                             if (response) {
                                 return response;
                             }
-                            return new Response(
-                                '<!DOCTYPE html><html><head><title>Offline</title></head>' +
-                                '<body><h1>Offline</h1><p>This page is not available offline. ' +
-                                'Please check your internet connection and try again.</p></body></html>',
-                                {
-                                    status: 503,
-                                    statusText: 'Service Unavailable',
-                                    headers: new Headers({
-                                        'Content-Type': 'text/html'
-                                    })
-                                }
-                            );
+                            return OFFLINE_RESPONSE.clone();
                         });
                 })
         );
@@ -144,18 +147,7 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 }).catch((error) => {
                     console.error('Fetch failed:', error);
-                    return new Response(
-                        '<!DOCTYPE html><html><head><title>Offline</title></head>' +
-                        '<body><h1>Offline</h1><p>This page is not available offline. ' +
-                        'Please check your internet connection and try again.</p></body></html>',
-                        {
-                            status: 503,
-                            statusText: 'Service Unavailable',
-                            headers: new Headers({
-                                'Content-Type': 'text/html'
-                            })
-                        }
-                    );
+                    return OFFLINE_RESPONSE.clone();
                 });
             })
     );
