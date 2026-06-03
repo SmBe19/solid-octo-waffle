@@ -77,6 +77,7 @@ const exerciseModalClose = document.getElementById('exercise-modal-close');
 const exerciseModalTitle = document.getElementById('exercise-modal-title');
 const exerciseModalGraphic = document.getElementById('exercise-modal-graphic');
 const exerciseModalDescription = document.getElementById('exercise-modal-description');
+let lastFocusedElement = null;
 
 // Timer state
 let timerState = {
@@ -217,23 +218,54 @@ function createExerciseGraphicSvg(exerciseName) {
             <line x1="145" y1="142" x2="120" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
             <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
             <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-            <text x="210" y="44" font-size="18" text-anchor="middle" fill="#3f51b5" font-weight="700">Form guide for ${safeName}</text>
+            <text x="210" y="44" font-size="18" text-anchor="middle" fill="#3f51b5" font-weight="700" aria-hidden="true">Form guide for ${safeName}</text>
         </svg>
     `;
+}
+
+function handleModalKeydown(event) {
+    if (!exerciseModal || !exerciseModal.classList.contains('is-open')) return;
+
+    if (event.key === 'Escape') {
+        closeExerciseModal();
+        return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const focusable = exerciseModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+    }
 }
 
 function openExerciseModal() {
     if (!appState.currentExercise || !exerciseModal) return;
 
     const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+    if (!definition) return;
     const guideText = exerciseGuides[definition.name] || 'Focus on controlled movement and full range of motion.';
 
+    lastFocusedElement = document.activeElement;
     exerciseModalTitle.textContent = `${definition.name} Guide`;
     exerciseModalGraphic.innerHTML = createExerciseGraphicSvg(definition.name);
     exerciseModalDescription.textContent = guideText;
     exerciseModal.classList.add('is-open');
     exerciseModal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    exerciseModal.addEventListener('keydown', handleModalKeydown);
+    if (exerciseModalClose) {
+        exerciseModalClose.focus();
+    }
 }
 
 function closeExerciseModal() {
@@ -241,6 +273,10 @@ function closeExerciseModal() {
     exerciseModal.classList.remove('is-open');
     exerciseModal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    exerciseModal.removeEventListener('keydown', handleModalKeydown);
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        lastFocusedElement.focus();
+    }
 }
 
 // Generate an exercise with random reps from the range
@@ -996,11 +1032,6 @@ async function initApp() {
     if (exerciseModalBackdrop) {
         exerciseModalBackdrop.addEventListener('click', closeExerciseModal);
     }
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && exerciseModal && exerciseModal.classList.contains('is-open')) {
-            closeExerciseModal();
-        }
-    });
     
     // Add timer event listeners
     if (startTimerBtn) {
