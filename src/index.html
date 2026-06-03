@@ -44,7 +44,7 @@
     <main>
         <section id="exercise-section">
             <h2>Today's Exercise</h2>
-            <div id="exercise-display" class="exercise-card">
+            <div id="exercise-display" class="exercise-card" role="button" tabindex="0" aria-label="Open exercise guide popup">
                 <p id="exercise-text">Loading exercise...</p>
             </div>
             <div id="timer-section" class="timer-section" style="display: none;">
@@ -105,6 +105,16 @@
             </div>
         </section>
     </main>
+
+    <div id="exercise-modal" class="exercise-modal" aria-hidden="true">
+        <div class="exercise-modal-backdrop" id="exercise-modal-backdrop"></div>
+        <div class="exercise-modal-content" role="dialog" aria-modal="true" aria-labelledby="exercise-modal-title">
+            <button id="exercise-modal-close" class="exercise-modal-close" aria-label="Close exercise guide">✕</button>
+            <h3 id="exercise-modal-title">Exercise Guide</h3>
+            <div id="exercise-modal-graphic" class="exercise-modal-graphic"></div>
+            <p id="exercise-modal-description" class="exercise-modal-description"></p>
+        </div>
+    </div>
 
     <footer>
         <p id="motivational-message" class="motivational-message">Stay active, stay healthy! Every day is a new opportunity to improve yourself. 💪</p>

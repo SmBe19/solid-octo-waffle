@@ -54,6 +54,7 @@ const successMessages = [
 
 // Get DOM elements
 const exerciseText = document.getElementById('exercise-text');
+const exerciseDisplay = document.getElementById('exercise-display');
 const completeBtn = document.getElementById('complete-btn');
 const newExerciseBtn = document.getElementById('new-exercise-btn');
 const scoreValue = document.getElementById('score-value');
@@ -70,6 +71,12 @@ const timerDisplay = document.getElementById('timer-display');
 const startTimerBtn = document.getElementById('start-timer-btn');
 const pauseTimerBtn = document.getElementById('pause-timer-btn');
 const resetTimerBtn = document.getElementById('reset-timer-btn');
+const exerciseModal = document.getElementById('exercise-modal');
+const exerciseModalBackdrop = document.getElementById('exercise-modal-backdrop');
+const exerciseModalClose = document.getElementById('exercise-modal-close');
+const exerciseModalTitle = document.getElementById('exercise-modal-title');
+const exerciseModalGraphic = document.getElementById('exercise-modal-graphic');
+const exerciseModalDescription = document.getElementById('exercise-modal-description');
 
 // Timer state
 let timerState = {
@@ -156,12 +163,85 @@ function getTodayDate() {
 // Constants
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
+const exerciseGuides = {
+    "jumping jacks": "Jump your feet wide while raising your arms overhead, then return to start.",
+    "push-ups": "Keep your body in a straight line, lower your chest, then push back up.",
+    "squats": "Sit your hips back and down, keep chest up, then drive through your heels to stand.",
+    "plank": "Hold a straight line from shoulders to heels while keeping your core tight.",
+    "lunges (each leg)": "Step forward, lower both knees to about 90°, then push back up.",
+    "burpees": "Squat down, kick your feet back, return to squat, then jump up explosively.",
+    "sit-ups": "Lie on your back, lift your torso toward your knees, then lower with control.",
+    "wall sit": "Lean against a wall with knees bent around 90° and hold your position.",
+    "mountain climbers": "From plank, alternate driving knees toward your chest quickly.",
+    "tricep dips": "Lower your body by bending elbows behind you, then press back up.",
+    "high knees (each leg)": "Run in place while lifting each knee to waist level.",
+    "bicycle crunches": "Alternate elbow-to-opposite-knee with a pedaling leg motion.",
+    "jump squats": "Perform a squat, then jump upward and land softly into the next squat.",
+    "leg raises": "Lift straight legs upward while keeping your lower back stable.",
+    "butt kicks": "Jog in place and kick your heels toward your glutes.",
+    "pike push-ups": "In a pike position, lower your head toward the floor, then press up.",
+    "Russian twists": "Lean back slightly and rotate your torso side to side.",
+    "box jumps (or step-ups)": "Jump or step onto a stable platform, then return down safely.",
+    "superman hold": "Lie face down and lift arms and legs off the floor while squeezing your back.",
+    "side lunges (each side)": "Step sideways, bend the stepping knee, then push back to center."
+};
+
 // Calculate days between two dates
 function daysBetween(date1, date2) {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
     const diffTime = Math.abs(d2 - d1);
     return Math.floor(diffTime / MS_PER_DAY);
+}
+
+function createExerciseGraphicSvg(exerciseName) {
+    const safeName = exerciseName.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+    return `
+        <svg viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Exercise guide graphic for ${safeName}">
+            <defs>
+                <linearGradient id="guideBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#f0f4ff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#dbe7ff;stop-opacity:1" />
+                </linearGradient>
+                <marker id="arrowHead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                    <path d="M0,0 L8,4 L0,8 Z" fill="#667eea" />
+                </marker>
+            </defs>
+            <rect x="0" y="0" width="420" height="220" rx="14" fill="url(#guideBg)"/>
+            <line x1="60" y1="185" x2="360" y2="185" stroke="#b8c6ef" stroke-width="4" />
+            <circle cx="145" cy="72" r="18" fill="#667eea" />
+            <line x1="145" y1="90" x2="145" y2="142" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
+            <line x1="145" y1="102" x2="112" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="102" x2="178" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="142" x2="120" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
+            <text x="210" y="44" font-size="18" text-anchor="middle" fill="#3f51b5" font-weight="700">Tap, follow form, breathe steadily</text>
+            <text x="210" y="205" font-size="16" text-anchor="middle" fill="#4a5568">${safeName}</text>
+        </svg>
+    `;
+}
+
+function openExerciseModal() {
+    if (!appState.currentExercise || !exerciseModal) return;
+
+    const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+    const guideText = exerciseGuides[definition.name] || 'Focus on controlled movement and full range of motion.';
+
+    exerciseModalTitle.textContent = `${definition.name} guide`;
+    exerciseModalGraphic.innerHTML = createExerciseGraphicSvg(definition.name);
+    exerciseModalDescription.textContent = guideText;
+    exerciseModal.classList.add('is-open');
+    exerciseModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeExerciseModal() {
+    if (!exerciseModal) return;
+    exerciseModal.classList.remove('is-open');
+    exerciseModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
 }
 
 // Generate an exercise with random reps from the range
@@ -902,6 +982,26 @@ async function initApp() {
     newExerciseBtn.addEventListener('click', getNewExercise);
     increaseRangeBtn.addEventListener('click', increaseRange);
     decreaseRangeBtn.addEventListener('click', decreaseRange);
+    if (exerciseDisplay) {
+        exerciseDisplay.addEventListener('click', openExerciseModal);
+        exerciseDisplay.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openExerciseModal();
+            }
+        });
+    }
+    if (exerciseModalClose) {
+        exerciseModalClose.addEventListener('click', closeExerciseModal);
+    }
+    if (exerciseModalBackdrop) {
+        exerciseModalBackdrop.addEventListener('click', closeExerciseModal);
+    }
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && exerciseModal && exerciseModal.classList.contains('is-open')) {
+            closeExerciseModal();
+        }
+    });
     
     // Add timer event listeners
     if (startTimerBtn) {
