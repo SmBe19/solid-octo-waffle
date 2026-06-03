@@ -218,7 +218,6 @@ function createExerciseGraphicSvg(exerciseName) {
             <line x1="145" y1="142" x2="120" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
             <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
             <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-            <text x="210" y="44" font-size="18" text-anchor="middle" fill="#3f51b5" font-weight="700" aria-hidden="true">Form guide for ${safeName}</text>
         </svg>
     `;
 }
@@ -253,12 +252,15 @@ function openExerciseModal() {
 
     const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
     if (!definition) return;
-    const guideText = exerciseGuides[definition.name] || 'Focus on controlled movement and full range of motion.';
+    const guideText = exerciseGuides[definition.name];
+    if (!guideText) {
+        console.warn(`Missing exercise guide copy for "${definition.name}"`);
+    }
 
     lastFocusedElement = document.activeElement;
-    exerciseModalTitle.textContent = `${definition.name} Guide`;
+    exerciseModalTitle.textContent = definition.name;
     exerciseModalGraphic.innerHTML = createExerciseGraphicSvg(definition.name);
-    exerciseModalDescription.textContent = guideText;
+    exerciseModalDescription.textContent = guideText || 'Focus on controlled movement and full range of motion.';
     exerciseModal.classList.add('is-open');
     exerciseModal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
