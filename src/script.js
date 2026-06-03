@@ -54,6 +54,7 @@ const successMessages = [
 
 // Get DOM elements
 const exerciseText = document.getElementById('exercise-text');
+const exerciseDisplay = document.getElementById('exercise-display');
 const completeBtn = document.getElementById('complete-btn');
 const newExerciseBtn = document.getElementById('new-exercise-btn');
 const scoreValue = document.getElementById('score-value');
@@ -162,6 +163,30 @@ function daysBetween(date1, date2) {
     const d2 = new Date(date2);
     const diffTime = Math.abs(d2 - d1);
     return Math.floor(diffTime / MS_PER_DAY);
+}
+
+function openExerciseSearch() {
+    if (!appState.currentExercise) return;
+
+    const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
+    if (!definition) return;
+
+    const query = `${definition.name} exercise`;
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    window.open(searchUrl, '_blank', 'noopener,noreferrer');
+}
+
+function handleExerciseDisplayKeydown(event) {
+    if (event.key === ' ') {
+        event.preventDefault();
+        openExerciseSearch();
+        return;
+    }
+
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        openExerciseSearch();
+    }
 }
 
 // Generate an exercise with random reps from the range
@@ -902,6 +927,10 @@ async function initApp() {
     newExerciseBtn.addEventListener('click', getNewExercise);
     increaseRangeBtn.addEventListener('click', increaseRange);
     decreaseRangeBtn.addEventListener('click', decreaseRange);
+    if (exerciseDisplay) {
+        exerciseDisplay.addEventListener('click', openExerciseSearch);
+        exerciseDisplay.addEventListener('keydown', handleExerciseDisplayKeydown);
+    }
     
     // Add timer event listeners
     if (startTimerBtn) {
