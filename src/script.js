@@ -218,7 +218,6 @@ function createExerciseGraphicSvg(exerciseName) {
             <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
             <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
             <text x="210" y="44" font-size="18" text-anchor="middle" fill="#3f51b5" font-weight="700">Form guide for ${safeName}</text>
-            <text x="210" y="205" font-size="16" text-anchor="middle" fill="#4a5568">${safeName}</text>
         </svg>
     `;
 }
