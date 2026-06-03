@@ -232,7 +232,13 @@ function handleModalKeydown(event) {
 
     if (event.key !== 'Tab') return;
 
-    const focusable = exerciseModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const focusable = Array.from(
+        exerciseModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((element) => {
+        const isVisible = element.offsetParent !== null;
+        const isAriaHidden = element.getAttribute('aria-hidden') === 'true';
+        return isVisible && !isAriaHidden;
+    });
     if (!focusable.length) return;
 
     const first = focusable[0];
@@ -254,7 +260,7 @@ function openExerciseModal() {
     if (!definition) return;
     const guideText = exerciseGuides[definition.name];
     if (!guideText) {
-        console.warn(`Missing exercise guide copy for "${definition.name}"`);
+        console.warn(`Missing exercise guide text for "${definition.name}"`);
     }
 
     lastFocusedElement = document.activeElement;
@@ -264,6 +270,7 @@ function openExerciseModal() {
     exerciseModal.classList.add('is-open');
     exerciseModal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    exerciseModal.removeEventListener('keydown', handleModalKeydown);
     exerciseModal.addEventListener('keydown', handleModalKeydown);
     if (exerciseModalClose) {
         exerciseModalClose.focus();
@@ -278,6 +285,13 @@ function closeExerciseModal() {
     exerciseModal.removeEventListener('keydown', handleModalKeydown);
     if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
         lastFocusedElement.focus();
+    }
+}
+
+function handleExerciseDisplayKeydown(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openExerciseModal();
     }
 }
 
@@ -1021,12 +1035,7 @@ async function initApp() {
     decreaseRangeBtn.addEventListener('click', decreaseRange);
     if (exerciseDisplay) {
         exerciseDisplay.addEventListener('click', openExerciseModal);
-        exerciseDisplay.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                openExerciseModal();
-            }
-        });
+        exerciseDisplay.addEventListener('keydown', handleExerciseDisplayKeydown);
     }
     if (exerciseModalClose) {
         exerciseModalClose.addEventListener('click', closeExerciseModal);
