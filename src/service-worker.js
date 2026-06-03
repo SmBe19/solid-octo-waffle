@@ -1,6 +1,6 @@
 // Service Worker for handling notifications and offline caching (PWA support)
 
-const CACHE_VERSION = '2026-01-19-001'; // Update this version when deploying changes
+const CACHE_VERSION = '2026-06-03-001'; // Update this version when deploying changes
 const CACHE_NAME = `daily-exercise-v${CACHE_VERSION}`;
 const NOTIFICATION_TAG = 'daily-exercise-reminder';
 
