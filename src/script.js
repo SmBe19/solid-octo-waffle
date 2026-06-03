@@ -195,8 +195,86 @@ function daysBetween(date1, date2) {
     return Math.floor(diffTime / MS_PER_DAY);
 }
 
+function getExerciseGraphicVariant(exerciseName) {
+    const normalizedName = exerciseName.toLowerCase();
+
+    if (normalizedName.includes('plank') || normalizedName.includes('mountain climbers')) {
+        return 'plank';
+    }
+    if (normalizedName.includes('sit') || normalizedName.includes('crunch') || normalizedName.includes('raises') ||
+        normalizedName.includes('twists') || normalizedName.includes('superman')) {
+        return 'floor';
+    }
+    if (normalizedName.includes('push-ups') || normalizedName.includes('pike')) {
+        return 'push';
+    }
+    if (normalizedName.includes('lunge') || normalizedName.includes('squat') || normalizedName.includes('jump') ||
+        normalizedName.includes('high knees') || normalizedName.includes('butt kicks') || normalizedName.includes('jacks') ||
+        normalizedName.includes('burpees') || normalizedName.includes('box')) {
+        return 'lower-body';
+    }
+
+    return 'standing';
+}
+
 function createExerciseGraphicSvg(exerciseName) {
-    const safeName = exerciseName.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const safeName = exerciseName
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    const variant = getExerciseGraphicVariant(exerciseName);
+
+    const figureMarkup = {
+        standing: `
+            <circle cx="145" cy="72" r="18" fill="#667eea" />
+            <line x1="145" y1="90" x2="145" y2="142" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
+            <line x1="145" y1="102" x2="112" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="102" x2="178" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="142" x2="120" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
+        `,
+        'lower-body': `
+            <circle cx="145" cy="68" r="18" fill="#667eea" />
+            <line x1="145" y1="86" x2="145" y2="126" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
+            <line x1="145" y1="98" x2="112" y2="118" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="98" x2="178" y2="118" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="126" x2="118" y2="154" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="118" y1="154" x2="118" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="145" y1="126" x2="172" y2="154" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="172" y1="154" x2="172" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <path d="M245 145 Q285 105 325 145" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
+        `,
+        push: `
+            <circle cx="98" cy="112" r="14" fill="#667eea" />
+            <line x1="112" y1="112" x2="220" y2="132" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
+            <line x1="142" y1="118" x2="126" y2="166" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="166" y1="122" x2="152" y2="169" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="206" y1="130" x2="243" y2="168" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="184" y1="126" x2="225" y2="162" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <path d="M265 115 Q300 87 336 115" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
+        `,
+        plank: `
+            <circle cx="95" cy="126" r="14" fill="#667eea" />
+            <line x1="110" y1="126" x2="238" y2="126" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
+            <line x1="138" y1="126" x2="128" y2="170" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="178" y1="126" x2="174" y2="170" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="228" y1="126" x2="260" y2="168" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="208" y1="126" x2="242" y2="164" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <path d="M278 112 Q312 82 346 112" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
+        `,
+        floor: `
+            <circle cx="130" cy="118" r="14" fill="#667eea" />
+            <line x1="143" y1="118" x2="220" y2="148" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
+            <line x1="170" y1="130" x2="154" y2="172" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="188" y1="138" x2="174" y2="178" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="220" y1="148" x2="270" y2="160" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <line x1="220" y1="148" x2="264" y2="184" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
+            <path d="M285 115 Q320 88 352 118" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
+        `
+    };
 
     return `
         <svg viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Exercise guide graphic for ${safeName}">
@@ -211,13 +289,8 @@ function createExerciseGraphicSvg(exerciseName) {
             </defs>
             <rect x="0" y="0" width="420" height="220" rx="14" fill="url(#guideBg)"/>
             <line x1="60" y1="185" x2="360" y2="185" stroke="#b8c6ef" stroke-width="4" />
-            <circle cx="145" cy="72" r="18" fill="#667eea" />
-            <line x1="145" y1="90" x2="145" y2="142" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
-            <line x1="145" y1="102" x2="112" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="102" x2="178" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="142" x2="120" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
+            ${figureMarkup[variant] || figureMarkup.standing}
+            <text x="210" y="32" text-anchor="middle" fill="#4b5fc7" font-size="20" font-weight="700">${safeName}</text>
         </svg>
     `;
 }
