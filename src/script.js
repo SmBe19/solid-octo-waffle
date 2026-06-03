@@ -71,13 +71,6 @@ const timerDisplay = document.getElementById('timer-display');
 const startTimerBtn = document.getElementById('start-timer-btn');
 const pauseTimerBtn = document.getElementById('pause-timer-btn');
 const resetTimerBtn = document.getElementById('reset-timer-btn');
-const exerciseModal = document.getElementById('exercise-modal');
-const exerciseModalBackdrop = document.getElementById('exercise-modal-backdrop');
-const exerciseModalClose = document.getElementById('exercise-modal-close');
-const exerciseModalTitle = document.getElementById('exercise-modal-title');
-const exerciseModalGraphic = document.getElementById('exercise-modal-graphic');
-const exerciseModalDescription = document.getElementById('exercise-modal-description');
-let lastFocusedElement = null;
 
 // Timer state
 let timerState = {
@@ -164,29 +157,6 @@ function getTodayDate() {
 // Constants
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-const exerciseGuides = {
-    "jumping jacks": "Jump your feet wide while raising your arms overhead, then return to start.",
-    "push-ups": "Keep your body in a straight line, lower your chest, then push back up.",
-    "squats": "Sit your hips back and down, keep chest up, then drive through your heels to stand.",
-    "plank": "Hold a straight line from shoulders to heels while keeping your core tight.",
-    "lunges (each leg)": "Step forward, lower both knees to about 90°, then push back up.",
-    "burpees": "Squat down, kick your feet back, return to squat, then jump up explosively.",
-    "sit-ups": "Lie on your back, lift your torso toward your knees, then lower with control.",
-    "wall sit": "Lean against a wall with knees bent around 90° and hold your position.",
-    "mountain climbers": "From plank, alternate driving knees toward your chest quickly.",
-    "tricep dips": "Lower your body by bending elbows behind you, then press back up.",
-    "high knees (each leg)": "Run in place while lifting each knee to waist level.",
-    "bicycle crunches": "Alternate elbow-to-opposite-knee with a pedaling leg motion.",
-    "jump squats": "Perform a squat, then jump upward and land softly into the next squat.",
-    "leg raises": "Lift straight legs upward while keeping your lower back stable.",
-    "butt kicks": "Jog in place and kick your heels toward your glutes.",
-    "pike push-ups": "In a pike position, lower your head toward the floor, then press up.",
-    "Russian twists": "Lean back slightly and rotate your torso side to side.",
-    "box jumps (or step-ups)": "Jump or step onto a stable platform, then return down safely.",
-    "superman hold": "Lie face down and lift arms and legs off the floor while squeezing your back.",
-    "side lunges (each side)": "Step sideways, bend the stepping knee, then push back to center."
-};
-
 // Calculate days between two dates
 function daysBetween(date1, date2) {
     const d1 = new Date(date1);
@@ -195,176 +165,25 @@ function daysBetween(date1, date2) {
     return Math.floor(diffTime / MS_PER_DAY);
 }
 
-function getExerciseGraphicVariant(exerciseName) {
-    const normalizedName = exerciseName.toLowerCase();
-
-    if (normalizedName.includes('plank') || normalizedName.includes('mountain climbers')) {
-        return 'plank';
-    }
-    if (normalizedName.includes('sit') || normalizedName.includes('crunch') || normalizedName.includes('raises') ||
-        normalizedName.includes('twists') || normalizedName.includes('superman')) {
-        return 'floor';
-    }
-    if (normalizedName.includes('push-ups') || normalizedName.includes('pike')) {
-        return 'push';
-    }
-    if (normalizedName.includes('lunge') || normalizedName.includes('squat') || normalizedName.includes('jump') ||
-        normalizedName.includes('high knees') || normalizedName.includes('butt kicks') || normalizedName.includes('jacks') ||
-        normalizedName.includes('burpees') || normalizedName.includes('box')) {
-        return 'lower-body';
-    }
-
-    return 'standing';
-}
-
-function createExerciseGraphicSvg(exerciseName) {
-    const safeName = exerciseName
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    const variant = getExerciseGraphicVariant(exerciseName);
-
-    const figureMarkup = {
-        standing: `
-            <circle cx="145" cy="72" r="18" fill="#667eea" />
-            <line x1="145" y1="90" x2="145" y2="142" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
-            <line x1="145" y1="102" x2="112" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="102" x2="178" y2="125" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="142" x2="120" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-        `,
-        'lower-body': `
-            <circle cx="145" cy="68" r="18" fill="#667eea" />
-            <line x1="145" y1="86" x2="145" y2="126" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
-            <line x1="145" y1="98" x2="112" y2="118" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="98" x2="178" y2="118" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="126" x2="118" y2="154" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="118" y1="154" x2="118" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="145" y1="126" x2="172" y2="154" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="172" y1="154" x2="172" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <path d="M245 145 Q285 105 325 145" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-        `,
-        push: `
-            <circle cx="98" cy="112" r="14" fill="#667eea" />
-            <line x1="112" y1="112" x2="220" y2="132" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
-            <line x1="142" y1="118" x2="126" y2="166" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="166" y1="122" x2="152" y2="169" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="206" y1="130" x2="243" y2="168" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="184" y1="126" x2="225" y2="162" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <path d="M265 115 Q300 87 336 115" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-        `,
-        plank: `
-            <circle cx="95" cy="126" r="14" fill="#667eea" />
-            <line x1="110" y1="126" x2="238" y2="126" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
-            <line x1="138" y1="126" x2="128" y2="170" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="178" y1="126" x2="174" y2="170" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="228" y1="126" x2="260" y2="168" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="208" y1="126" x2="242" y2="164" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <path d="M278 112 Q312 82 346 112" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-        `,
-        floor: `
-            <circle cx="130" cy="118" r="14" fill="#667eea" />
-            <line x1="143" y1="118" x2="220" y2="148" stroke="#667eea" stroke-width="10" stroke-linecap="round" />
-            <line x1="170" y1="130" x2="154" y2="172" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="188" y1="138" x2="174" y2="178" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="220" y1="148" x2="270" y2="160" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <line x1="220" y1="148" x2="264" y2="184" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
-            <path d="M285 115 Q320 88 352 118" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-        `
-    };
-
-    return `
-        <svg viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Exercise guide graphic for ${safeName}">
-            <defs>
-                <linearGradient id="guideBg" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#f0f4ff;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#dbe7ff;stop-opacity:1" />
-                </linearGradient>
-                <marker id="arrowHead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-                    <path d="M0,0 L8,4 L0,8 Z" fill="#667eea" />
-                </marker>
-            </defs>
-            <rect x="0" y="0" width="420" height="220" rx="14" fill="url(#guideBg)"/>
-            <line x1="60" y1="185" x2="360" y2="185" stroke="#b8c6ef" stroke-width="4" />
-            ${figureMarkup[variant] || figureMarkup.standing}
-            <text x="210" y="32" text-anchor="middle" fill="#4b5fc7" font-size="20" font-weight="700">${safeName}</text>
-        </svg>
-    `;
-}
-
-function handleModalKeydown(event) {
-    if (!exerciseModal || !exerciseModal.classList.contains('is-open')) return;
-
-    if (event.key === 'Escape') {
-        closeExerciseModal();
-        return;
-    }
-
-    if (event.key !== 'Tab') return;
-
-    const focusable = Array.from(
-        exerciseModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-    ).filter((element) => {
-        const isVisible = element.offsetParent !== null;
-        const isAriaHidden = element.getAttribute('aria-hidden') === 'true';
-        return isVisible && !isAriaHidden;
-    });
-    if (!focusable.length) return;
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-    }
-}
-
-function openExerciseModal() {
-    if (!appState.currentExercise || !exerciseModal) return;
+function openExerciseSearch() {
+    if (!appState.currentExercise) return;
 
     const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
     if (!definition) return;
-    const guideText = exerciseGuides[definition.name];
-    if (!guideText) {
-        console.warn(`Missing exercise guide text for "${definition.name}"`);
-    }
 
-    lastFocusedElement = document.activeElement;
-    exerciseModalTitle.textContent = definition.name;
-    exerciseModalGraphic.innerHTML = createExerciseGraphicSvg(definition.name);
-    exerciseModalDescription.textContent = guideText || 'Focus on controlled movement and full range of motion.';
-    exerciseModal.classList.add('is-open');
-    exerciseModal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-    exerciseModal.removeEventListener('keydown', handleModalKeydown);
-    exerciseModal.addEventListener('keydown', handleModalKeydown);
-    if (exerciseModalClose) {
-        exerciseModalClose.focus();
-    }
-}
+    const query = `${definition.name} exercise`;
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    const searchWindow = window.open(searchUrl, '_blank', 'noopener,noreferrer');
 
-function closeExerciseModal() {
-    if (!exerciseModal) return;
-    exerciseModal.classList.remove('is-open');
-    exerciseModal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    exerciseModal.removeEventListener('keydown', handleModalKeydown);
-    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
-        lastFocusedElement.focus();
+    if (!searchWindow) {
+        window.location.href = searchUrl;
     }
 }
 
 function handleExerciseDisplayKeydown(event) {
     if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        openExerciseModal();
+        openExerciseSearch();
     }
 }
 
@@ -1107,14 +926,8 @@ async function initApp() {
     increaseRangeBtn.addEventListener('click', increaseRange);
     decreaseRangeBtn.addEventListener('click', decreaseRange);
     if (exerciseDisplay) {
-        exerciseDisplay.addEventListener('click', openExerciseModal);
+        exerciseDisplay.addEventListener('click', openExerciseSearch);
         exerciseDisplay.addEventListener('keydown', handleExerciseDisplayKeydown);
-    }
-    if (exerciseModalClose) {
-        exerciseModalClose.addEventListener('click', closeExerciseModal);
-    }
-    if (exerciseModalBackdrop) {
-        exerciseModalBackdrop.addEventListener('click', closeExerciseModal);
     }
     
     // Add timer event listeners
