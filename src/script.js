@@ -177,7 +177,13 @@ function openExerciseSearch() {
 }
 
 function handleExerciseDisplayKeydown(event) {
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (event.key === ' ') {
+        event.preventDefault();
+        openExerciseSearch();
+        return;
+    }
+
+    if (event.key === 'Enter') {
         event.preventDefault();
         openExerciseSearch();
     }
