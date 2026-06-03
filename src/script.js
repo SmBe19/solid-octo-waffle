@@ -217,7 +217,7 @@ function createExerciseGraphicSvg(exerciseName) {
             <line x1="145" y1="142" x2="120" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
             <line x1="145" y1="142" x2="170" y2="180" stroke="#667eea" stroke-width="8" stroke-linecap="round" />
             <path d="M245 135 Q285 95 325 135" fill="none" stroke="#667eea" stroke-width="6" marker-end="url(#arrowHead)" />
-            <text x="210" y="44" font-size="18" text-anchor="middle" fill="#3f51b5" font-weight="700">Tap, follow form, breathe steadily</text>
+            <text x="210" y="44" font-size="18" text-anchor="middle" fill="#3f51b5" font-weight="700">Form guide for ${safeName}</text>
             <text x="210" y="205" font-size="16" text-anchor="middle" fill="#4a5568">${safeName}</text>
         </svg>
     `;
@@ -229,7 +229,7 @@ function openExerciseModal() {
     const definition = exerciseDefinitions[appState.currentExercise.exerciseIndex];
     const guideText = exerciseGuides[definition.name] || 'Focus on controlled movement and full range of motion.';
 
-    exerciseModalTitle.textContent = `${definition.name} guide`;
+    exerciseModalTitle.textContent = `${definition.name} Guide`;
     exerciseModalGraphic.innerHTML = createExerciseGraphicSvg(definition.name);
     exerciseModalDescription.textContent = guideText;
     exerciseModal.classList.add('is-open');
