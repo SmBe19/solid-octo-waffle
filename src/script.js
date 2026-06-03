@@ -173,11 +173,7 @@ function openExerciseSearch() {
 
     const query = `${definition.name} exercise`;
     const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    const searchWindow = window.open(searchUrl, '_blank', 'noopener,noreferrer');
-
-    if (!searchWindow) {
-        window.location.href = searchUrl;
-    }
+    window.open(searchUrl, '_blank', 'noopener,noreferrer');
 }
 
 function handleExerciseDisplayKeydown(event) {
